@@ -18,13 +18,13 @@
 html,body{font-family:var(--fb);background:var(--bg);color:var(--txt);font-size:14px}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:10px}
 
-/* ─── VIEWS ─── */
+/* - VIEWS - */
 .view{display:none}
 .view.on{display:block}
 .appview{display:none;flex-direction:column;height:100vh;overflow:hidden}
 .appview.on{display:flex}
 
-/* ─── NAV ─── */
+/* - NAV - */
 nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px solid var(--brd);flex-shrink:0;background:rgba(13,13,20,.97);z-index:100;gap:4px}
 .logo{font-family:var(--fd);font-size:22px;font-weight:900;letter-spacing:-.02em;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;cursor:pointer;margin-right:10px;user-select:none;flex-shrink:0}
 .logo:hover{opacity:.85}
@@ -36,9 +36,7 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
 .dash-btn:hover{color:var(--txt);border-color:var(--acc)}
 .dash-btn.on{background:var(--surf2);color:var(--txt);border-color:var(--brd2)}
 
-/* ════════════════════════════════════════
-   LANDING PAGE
-════════════════════════════════════════ */
+/* LANDING PAGE */
 #view-landing{background:var(--bg);min-height:100vh;overflow-y:auto}
 .land-nav{display:flex;align-items:center;padding:0 32px;height:60px;border-bottom:1px solid var(--brd);background:rgba(13,13,20,.97);position:sticky;top:0;z-index:100}
 .land-logo{font-family:var(--fd);font-size:24px;font-weight:900;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;cursor:pointer}
@@ -106,9 +104,7 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
 .lf-logo{font-family:var(--fd);font-size:18px;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .lf-text{font-size:12px;color:var(--mut);font-weight:500}
 
-/* ════════════════════════════════════════
-   EVENT DETAIL PAGE (no map yet)
-════════════════════════════════════════ */
+/* EVENT DETAIL PAGE (no map yet) */
 #view-event{background:var(--bg);min-height:100vh;overflow-y:auto}
 .ev-detail-header{padding:32px 32px 0;max-width:1100px;margin:0 auto}
 .ev-back{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--mut);cursor:pointer;margin-bottom:20px;transition:color .15s}
@@ -132,9 +128,7 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
 .vtag.rally{background:rgba(74,222,128,.1);color:var(--grn);border-color:rgba(74,222,128,.3)}
 .vtag.ltd{background:rgba(251,191,36,.1);color:var(--amb);border-color:rgba(251,191,36,.3)}
 
-/* ════════════════════════════════════════
-   PUBLIC MAP SCREEN
-════════════════════════════════════════ */
+/* PUBLIC MAP SCREEN */
 .pub-wrap{display:flex;flex:1;overflow:hidden;min-height:0}
 .pub-side{width:280px;flex-shrink:0;border-right:1px solid var(--brd);display:flex;flex-direction:column;overflow:hidden;background:var(--surf)}
 .side-top{padding:12px;border-bottom:1px solid var(--brd);flex-shrink:0}
@@ -257,9 +251,7 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
 .ro-member:hover{border-color:var(--grn);background:rgba(74,222,128,.08)}
 .ro-av{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0;font-family:var(--fd)}
 
-/* ════════════════════════════════════════
-   ARTIST SUBMISSION FORM
-════════════════════════════════════════ */
+/* ARTIST SUBMISSION FORM */
 .form-outer{flex:1;overflow-y:auto;background:var(--bg)}
 .form-wrap{max-width:640px;margin:0 auto;padding:28px 24px}
 .form-hero{margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--brd)}
@@ -325,9 +317,7 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
 .success-scr.on{display:flex}
 .success-icon{width:64px;height:64px;border-radius:50%;background:rgba(74,222,128,.12);border:2px solid rgba(74,222,128,.3);display:flex;align-items:center;justify-content:center}
 
-/* ════════════════════════════════════════
-   DASHBOARD
-════════════════════════════════════════ */
+/* DASHBOARD */
 .dash{display:flex;flex:1;overflow:hidden;min-height:0}
 .dash-side{width:240px;flex-shrink:0;border-right:1px solid var(--brd);display:flex;flex-direction:column;padding:14px;gap:5px;overflow-y:auto;background:var(--surf)}
 .dash-side-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);padding:8px 0 3px}
@@ -391,7 +381,7 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
 </head>
 <body>
 
-<!-- ════════ LANDING ════════ -->
+<!-- - LANDING - -->
 <div class="view on" id="view-landing">
   <nav class="land-nav">
     <div class="land-logo" onclick="showLanding()">AlleyMap</div>
@@ -472,7 +462,7 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
   </div>
 </div>
 
-<!-- ════════ EVENT DETAIL (no map yet) ════════ -->
+<!-- - EVENT DETAIL (no map yet) - -->
 <div class="view" id="view-event">
   <nav class="land-nav">
     <div class="land-logo" onclick="showLanding()">AlleyMap</div>
@@ -484,7 +474,7 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
   <div id="event-detail-content" style="overflow-y:auto;max-height:calc(100vh - 60px)"></div>
 </div>
 
-<!-- ════════ APP WRAPPER ════════ -->
+<!-- - APP WRAPPER - -->
 <div class="appview" id="appview">
   <nav>
     <div class="logo" onclick="showLanding()">AlleyMap</div>
@@ -687,9 +677,9 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
 <div class="toast" id="toastEl"></div>
 
 <script>
-// ─────────────────────────────────────────
+// -
 // DATA
-// ─────────────────────────────────────────
+// -
 var EVENTS = [
   {
     id:0, name:'MegaCon Birmingham 2026', venue:'NEC Birmingham',
@@ -725,9 +715,9 @@ var EVENTS = [
   }
 ];
 
-// ─────────────────────────────────────────
+// -
 // STATE
-// ─────────────────────────────────────────
+// -
 var curView='landing';   // landing | event | app
 var curTab='map';        // map | form | dash
 var pubEvId=-1;          // selected event on public map
@@ -740,9 +730,9 @@ var curDashTab='overview';
 var placingId=null, placingEvId=null;
 var currentEventView=null; // for landing event detail
 
-// ─────────────────────────────────────────
+// -
 // VIEW SWITCHING
-// ─────────────────────────────────────────
+// -
 function showLanding(){
   document.getElementById('view-landing').classList.add('on');
   document.getElementById('view-event').classList.remove('on');
@@ -793,9 +783,9 @@ function switchTab(tab){
   if(tab==='form'){buildFormEvSelect();}
 }
 
-// ─────────────────────────────────────────
+// -
 // LANDING
-// ─────────────────────────────────────────
+// -
 function buildLandingEvents(){
   var el=document.getElementById('landingEventsList');
   if(!el)return;
@@ -817,9 +807,9 @@ function buildLandingEvents(){
   });
 }
 
-// ─────────────────────────────────────────
+// -
 // EVENT DETAIL (no map yet)
-// ─────────────────────────────────────────
+// -
 function renderEventDetail(ev){
   var badges='';
   if(ev.mapStatus==='map-available') badges+='<span class="badge badge-map">Map available</span>';
@@ -883,9 +873,9 @@ function goToArtistOnMap(evId,artistId){
   },50);
 }
 
-// ─────────────────────────────────────────
+// -
 // PUBLIC MAP — SIDE EVENT BUTTONS
-// ─────────────────────────────────────────
+// -
 function buildSideEvBtns(){
   var el=document.getElementById('sideEvBtns');
   if(!el)return;
@@ -949,9 +939,9 @@ function loadPubMap(id){
   }
 }
 
-// ─────────────────────────────────────────
+// -
 // ARTIST LIST (sidebar)
-// ─────────────────────────────────────────
+// -
 function getFilteredArtists(){
   if(pubEvId<0)return[];
   var ev=EVENTS.find(function(e){return e.id===pubEvId;});
@@ -1008,9 +998,9 @@ function setChip(f,btn){
   renderPubPins();
 }
 
-// ─────────────────────────────────────────
+// -
 // PINS
-// ─────────────────────────────────────────
+// -
 function renderPubPins(){
   var c=document.getElementById('pubPins');
   c.innerHTML='';
@@ -1077,9 +1067,9 @@ function renderPubPins(){
   });
 }
 
-// ─────────────────────────────────────────
+// -
 // ARTIST PANEL
-// ─────────────────────────────────────────
+// -
 function openArtistPanel(artistId){
   selArtistId=artistId;
   renderArtistList();
@@ -1170,9 +1160,9 @@ function closePanelIfBg(e){
   if(e.target===document.getElementById('artistPanel'))closeArtistPanel();
 }
 
-// ─────────────────────────────────────────
+// -
 // RALLY EXPLORER OVERLAY
-// ─────────────────────────────────────────
+// -
 function toggleRallyOverlay(){
   var el=document.getElementById('rallyOverlay');
   el.classList.toggle('on');
@@ -1200,9 +1190,9 @@ function toggleRallyOverlay(){
   }
 }
 
-// ─────────────────────────────────────────
+// -
 // MAP ZOOM
-// ─────────────────────────────────────────
+// -
 function zm(f){
   mapZoom=Math.min(Math.max(mapZoom*f,.25),4);
   document.getElementById('mapInner').style.transform='scale('+mapZoom+')';
@@ -1210,9 +1200,9 @@ function zm(f){
 }
 function zr(){mapZoom=1;document.getElementById('mapInner').style.transform='';}
 
-// ─────────────────────────────────────────
+// -
 // FORM
-// ─────────────────────────────────────────
+// -
 function buildFormEvSelect(){
   var sel=document.getElementById('formEvSelect');
   if(!sel)return;
@@ -1280,9 +1270,9 @@ function resetForm(){
   document.getElementById('successScr').classList.remove('on');
 }
 
-// ─────────────────────────────────────────
+// -
 // DASHBOARD
-// ─────────────────────────────────────────
+// -
 function buildDashEvList(){
   var el=document.getElementById('dashEvList');if(!el)return;el.innerHTML='';
   EVENTS.forEach(function(ev,i){
@@ -1513,9 +1503,9 @@ function rejectQ(id){
   showToast('Submission rejected');
 }
 
-// ─────────────────────────────────────────
+// -
 // SUPABASE REST API — no external library needed
-// ─────────────────────────────────────────
+// -
 var SUPA_URL='https://oydlmpwujazgtjyctgmm.supabase.co';
 var SUPA_KEY=['eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
   'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95ZGxtcHd1amF6Z3RqeWN0Z21tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NDU0NDksImV4cCI6MjA5MDIyMTQ0OX0',
@@ -1614,9 +1604,9 @@ var db={
   }
 };
 
-// ─────────────────────────────────────────
+// -
 // LOAD EVENTS FROM SUPABASE
-// ─────────────────────────────────────────
+// -
 async function loadEvents(){
   var res=await db.from('events').select('*').order('created_at');
   if(res.error){console.error('loadEvents:',res.error);return;}
@@ -1655,9 +1645,9 @@ async function loadAllArtists(){
   });
 }
 
-// ─────────────────────────────────────────
+// -
 // LOAD PENDING ARTISTS FOR DASHBOARD
-// ─────────────────────────────────────────
+// -
 async function updateQueueBadge(){
   // Fetch all pending counts grouped by event in one query
   var res=await db.from('artists').select('event_id').eq('status','pending');
@@ -1680,9 +1670,9 @@ async function loadPendingArtists(){
   return res.data||[];
 }
 
-// ─────────────────────────────────────────
+// -
 // FORM SUBMISSION — SAVE TO SUPABASE
-// ─────────────────────────────────────────
+// -
 async function submitForm(){
   var evId=document.getElementById('formEvSelect').value;
   var name=document.getElementById('fName').value.trim();
@@ -1773,9 +1763,9 @@ function resetForm(){
   if(btn){btn.disabled=false;btn.textContent='Submit for approval →';}
 }
 
-// ─────────────────────────────────────────
+// -
 // DASHBOARD — APPROVE / REJECT
-// ─────────────────────────────────────────
+// -
 async function approveQ(id){
   var e=document.getElementById(id);if(!e)return;
   var artistId=e.getAttribute('data-artist-id');
@@ -1808,9 +1798,9 @@ async function rejectQ(id){
   updateQueueBadge();
 }
 
-// ─────────────────────────────────────────
+// -
 // DASHBOARD — SAVE EVENTS TO SUPABASE
-// ─────────────────────────────────────────
+// -
 async function saveEventToDB(ev){
   var res=await db.from('events').upsert({
     id:ev.id, name:ev.name, venue:ev.venue,
@@ -1821,9 +1811,9 @@ async function saveEventToDB(ev){
   if(res.error)console.error('saveEvent:',res.error);
 }
 
-// ─────────────────────────────────────────
+// -
 // DASHBOARD — UPLOAD MAP IMAGE TO SUPABASE
-// ─────────────────────────────────────────
+// -
 async function dashMapLoad(e,evId){
   console.log('dashMapLoad called, evId:',evId);
   var f=e.target.files[0];
@@ -1851,9 +1841,9 @@ async function dashMapLoad(e,evId){
   if(pubEvId===evId)loadPubMap(evId);
 }
 
-// ─────────────────────────────────────────
+// -
 // DASHBOARD — SAVE PIN POSITION
-// ─────────────────────────────────────────
+// -
 async function savePinPosition(artistId,x,y){
   var res=await db.from('artists').update({pin_x:x,pin_y:y}).eq('id',artistId);
   if(res.error)console.error('savePin:',res.error);
@@ -1922,18 +1912,18 @@ renderDashContent=async function(tab){
   _origRenderDash(tab);
 };
 
-// ─────────────────────────────────────────
+// -
 // TOAST
-// ─────────────────────────────────────────
+// -
 function showToast(msg){
   var t=document.getElementById('toastEl');
   t.textContent=msg;t.classList.add('on');
   setTimeout(function(){t.classList.remove('on');},2400);
 }
 
-// ─────────────────────────────────────────
+// -
 // INIT — load from Supabase then show landing
-// ─────────────────────────────────────────
+// -
 loadEvents().catch(function(err){
   console.error('Failed to load from Supabase:',err);
   showLanding();
