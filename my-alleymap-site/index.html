@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AlleyMap — Artist Alley Con Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0d0d14;--surface:#16161f;--surface2:#1e1e2a;--surface3:#26263a;
+  --accent:#c084fc;--accent2:#f472b6;--accent3:#38bdf8;
+  --green:#4ade80;--amber:#fbbf24;--red:#f87171;
+  --text:#f1f0ff;--muted:#7b7a9a;--border:#2e2e42;--border2:#3d3d55;
+  --radius:12px;--radius-sm:8px;
+  --font-d:'Syne',sans-serif;--font-b:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100vh;overflow:hidden;font-family:var(--font-b);background:var(--bg);color:var(--text);font-size:14px}
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+nav{display:flex;align-items:center;padding:0 24px;height:56px;border-bottom:1px solid var(--border);flex-shrink:0;gap:6px;background:rgba(13,13,20,.96);position:relative;z-index:50}
+.logo{font-family:var(--font-d);font-size:20px;font-weight:800;margin-right:16px;letter-spacing:-.03em;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-tab{padding:6px 16px;border-radius:20px;border:none;background:none;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);font-family:var(--font-b);transition:all .15s}
+.nav-tab:hover{background:var(--surface2);color:var(--text)}
+.nav-tab.active{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
+.nav-pill{margin-left:auto;padding:8px 18px;border-radius:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;font-size:13px;font-weight:600;cursor:pointer;color:#fff;font-family:var(--font-b);transition:opacity .15s}
+.nav-pill:hover{opacity:.85}
+.screen{display:none;flex:1;overflow:hidden;flex-direction:column;min-height:0}
+.screen.active{display:flex}
+.side-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:8px 0 4px}
+.ev-card{border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;cursor:pointer;transition:all .15s;background:var(--surface2)}
+.ev-card:hover{border-color:var(--border2);background:var(--surface3)}
+.ev-card.sel{border-color:var(--accent);background:rgba(192,132,252,.08)}
+.ev-name{font-size:13px;font-weight:600;color:var(--text)}
+.ev-date{font-size:11px;color:var(--muted);margin-top:2px}
+.ev-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin-top:6px}
+.b-live{background:rgba(74,222,128,.15);color:var(--green);border:1px solid rgba(74,222,128,.3)}
+.b-draft{background:var(--surface3);color:var(--muted);border:1px solid var(--border)}
+.add-btn{padding:10px;border:1px dashed var(--border2);border-radius:var(--radius-sm);background:none;font-size:12px;color:var(--muted);cursor:pointer;text-align:center;font-family:var(--font-b);transition:all .15s}
+.add-btn:hover{border-color:var(--accent);color:var(--accent)}
+/* DASHBOARD */
+.dash{display:flex;flex:1;overflow:hidden;min-height:0}
+.dash-side{width:240px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px;gap:6px;overflow-y:auto;background:var(--surface)}
+.rally-tag{font-size:11px;color:var(--green);background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);border-radius:6px;padding:6px 10px}
+.dash-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.dash-toolbar{display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);gap:8px;flex-shrink:0}
+.dash-title{font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--text)}
+.dtabs{display:flex;gap:2px;margin-left:16px}
+.dtab{padding:6px 14px;border-radius:var(--radius-sm);border:none;background:none;font-size:12px;cursor:pointer;color:var(--muted);font-family:var(--font-b);font-weight:500;transition:all .15s}
+.dtab:hover{background:var(--surface2);color:var(--text)}
+.dtab.on{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
+.dash-content{flex:1;overflow-y:auto;padding:20px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.stat-n{font-family:var(--font-d);font-size:28px;font-weight:800;color:var(--accent)}
+.stat-l{font-size:11px;color:var(--muted);margin-top:3px;font-weight:500}
+.q-item{border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;background:var(--surface2);transition:border-color .15s}
+.q-item:hover{border-color:var(--border2)}
+.q-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.q-info{flex:1;min-width:0}
+.q-name{font-size:13px;font-weight:600;color:var(--text)}
+.q-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.q-actions{display:flex;gap:6px}
+.qbtn{padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface3);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font-b);color:var(--text);transition:all .15s}
+.qbtn.ok{border-color:rgba(74,222,128,.4);color:var(--green)}.qbtn.ok:hover{background:rgba(74,222,128,.12)}
+.qbtn.no{border-color:rgba(248,113,113,.4);color:var(--red)}.qbtn.no:hover{background:rgba(248,113,113,.1)}
+.rally-card{border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px;background:var(--surface2)}
+.rc-name{font-size:14px;font-weight:700;color:var(--green)}
+.rc-meta{font-size:11px;color:var(--muted);margin:4px 0 10px}
+.rc-members{display:flex;gap:6px;flex-wrap:wrap}
+.rc-pip{padding:3px 10px;border-radius:10px;background:rgba(74,222,128,.1);color:var(--green);border:1px solid rgba(74,222,128,.3);font-size:11px;font-weight:500}
+.map-drop{border:1.5px dashed var(--border2);border-radius:var(--radius);padding:36px;text-align:center;color:var(--muted);margin-bottom:14px;cursor:pointer;transition:all .15s}
+.map-drop:hover{border-color:var(--accent);color:var(--accent)}
+.map-thumb{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px;position:relative}
+.map-thumb img{width:100%;max-height:180px;object-fit:contain;display:block}
+.map-thumb-badge{position:absolute;top:8px;right:8px;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.4);color:var(--green);font-size:10px;font-weight:600;padding:3px 8px;border-radius:10px}
+.link-box{display:flex;gap:8px;align-items:center}
+.link-val{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--muted);background:var(--surface2)}
+/* FORM */
+.form-outer{flex:1;overflow-y:auto;background:var(--bg)}
+.form-wrap{max-width:640px;margin:0 auto;padding:28px 24px}
+.form-hero{margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.form-hero-title{font-family:var(--font-d);font-size:22px;font-weight:800;margin-bottom:4px}
+.form-hero-sub{font-size:12px;color:var(--muted)}
+.form-section{margin-bottom:24px}
+.fs-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.fs-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.field input,.field textarea,.field select{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:var(--font-b);color:var(--text);background:var(--surface2);outline:none;resize:vertical;transition:border-color .15s}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent)}
+.field textarea{min-height:72px;line-height:1.6}
+.field select option{background:var(--surface2)}
+.pfp-row{display:flex;gap:16px;align-items:flex-start;margin-bottom:14px}
+.pfp-circle{width:76px;height:76px;border-radius:50%;border:1.5px dashed var(--border2);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);text-align:center;line-height:1.4;cursor:pointer;overflow:hidden;flex-shrink:0;padding:6px;transition:border-color .15s}
+.pfp-circle:hover{border-color:var(--accent)}
+.pfp-circle img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.socials-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.soc-row{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;background:var(--surface2);transition:border-color .15s}
+.soc-row:focus-within{border-color:var(--accent)}
+.soc-lbl{font-size:10px;font-weight:600;color:var(--muted);width:68px;flex-shrink:0}
+.soc-row input{border:none;padding:0;font-size:12px;outline:none;flex:1;background:transparent;color:var(--text);font-family:var(--font-b)}
+.cat-item{border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;display:grid;grid-template-columns:60px 1fr;gap:10px;align-items:start;background:var(--surface2)}
+.cat-thumb{width:60px;height:60px;border-radius:var(--radius-sm);border:1.5px dashed var(--border2);background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);cursor:pointer;overflow:hidden;text-align:center;line-height:1.4;transition:border-color .15s}
+.cat-thumb:hover{border-color:var(--accent)}
+.cat-thumb img{width:100%;height:100%;object-fit:cover;border-radius:6px}
+.cat-fields{display:flex;flex-direction:column;gap:6px}
+.cat-fields input{padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-family:var(--font-b);color:var(--text);background:var(--surface3);outline:none;width:100%;transition:border-color .15s}
+.cat-fields input:focus{border-color:var(--accent)}
+.add-cat{padding:10px;border:1.5px dashed var(--border2);border-radius:var(--radius-sm);background:none;font-size:12px;color:var(--muted);cursor:pointer;width:100%;text-align:center;font-family:var(--font-b);transition:all .15s;margin-top:4px}
+.add-cat:hover{border-color:var(--accent);color:var(--accent)}
+.toggle-row{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;margin-bottom:10px;background:var(--surface2);user-select:none;transition:border-color .15s}
+.toggle-row:hover{border-color:var(--border2)}
+.toggle-info{flex:1}
+.toggle-title{font-size:13px;font-weight:600;color:var(--text)}
+.toggle-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.tbox{width:40px;height:22px;border-radius:11px;background:var(--surface3);position:relative;flex-shrink:0;transition:background .2s;border:1px solid var(--border2)}
+.tbox.on{background:var(--accent)}
+.tknob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.tbox.on .tknob{left:20px}
+.extra{display:none}.extra.show{display:block}
+.submit-bar{padding:14px 24px;border-top:1px solid var(--border);flex-shrink:0;display:flex;justify-content:flex-end;gap:10px;background:var(--surface)}
+.sbtn{padding:10px 24px;border-radius:20px;border:1px solid var(--border2);background:var(--surface2);font-size:13px;font-weight:600;cursor:pointer;color:var(--text);font-family:var(--font-b);transition:all .15s}
+.sbtn:hover{background:var(--surface3)}
+.sbtn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff}
+.sbtn.primary:hover{opacity:.88}
+.success-screen{display:none;flex:1;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:40px;text-align:center}
+.success-screen.show{display:flex}
+.success-icon{width:64px;height:64px;border-radius:50%;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.4);display:flex;align-items:center;justify-content:center}
+/* PUBLIC MAP */
+.pub-wrap{display:flex;flex:1;overflow:hidden;min-height:0}
+.pub-side{width:300px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;background:var(--surface)}
+.side-top{padding:14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.ev-pick-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px}
+.ev-picker{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.ev-pick-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);cursor:pointer;transition:all .15s;font-family:var(--font-b);text-align:left;width:100%}
+.ev-pick-btn:hover{border-color:var(--border2);background:var(--surface3)}
+.ev-pick-btn.active{border-color:var(--accent);background:rgba(192,132,252,.1)}
+.ev-pick-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ev-pick-info{flex:1;min-width:0}
+.ev-pick-name{font-size:12px;font-weight:600;color:var(--text)}
+.ev-pick-date{font-size:10px;color:var(--muted);margin-top:1px}
+.ev-pick-badge{font-size:9px;font-weight:600;padding:2px 6px;border-radius:8px}
+.search-box{width:100%;padding:9px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:var(--font-b);color:var(--text);background:var(--surface2);outline:none;transition:border-color .15s}
+.search-box:focus{border-color:var(--accent)}
+.search-box::placeholder{color:var(--muted)}
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+.chip{padding:4px 12px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:500;cursor:pointer;background:var(--surface2);color:var(--muted);font-family:var(--font-b);transition:all .15s}
+.chip:hover{border-color:var(--border2);color:var(--text)}
+.chip.on{background:var(--surface3);color:var(--text);border-color:var(--border2)}
+.chip.ron{background:rgba(74,222,128,.12);color:var(--green);border-color:rgba(74,222,128,.4)}
+.pub-list{flex:1;overflow-y:auto;padding:8px}
+.pub-card{border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:6px;cursor:pointer;background:var(--surface2);transition:all .15s}
+.pub-card:hover{border-color:var(--border2);background:var(--surface3)}
+.pub-card.sel{border-color:var(--accent);background:rgba(192,132,252,.07)}
+.pc-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.pc-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;overflow:hidden;border:1.5px solid var(--border2)}
+.pc-av img{width:100%;height:100%;object-fit:cover}
+.pc-name{font-size:13px;font-weight:600;color:var(--text)}
+.pc-tbl{font-size:11px;color:var(--muted);margin-top:1px}
+.pc-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.ptg{padding:2px 8px;border-radius:10px;border:1px solid var(--border);font-size:10px;color:var(--muted);background:var(--surface3)}
+.ptg.r{background:rgba(74,222,128,.1);color:var(--green);border-color:rgba(74,222,128,.3)}
+.ptg.l{background:rgba(251,191,36,.1);color:var(--amber);border-color:rgba(251,191,36,.3)}
+.pc-socs{display:flex;gap:4px;flex-wrap:wrap}
+.pc-soc{padding:2px 8px;border-radius:6px;border:1px solid var(--border);font-size:10px;color:var(--muted)}
+.rally-btn{margin:0 14px 12px;padding:10px;border:1px solid rgba(74,222,128,.35);border-radius:var(--radius-sm);background:rgba(74,222,128,.08);font-size:12px;font-weight:600;color:var(--green);cursor:pointer;font-family:var(--font-b);transition:all .15s}
+.rally-btn:hover{background:rgba(74,222,128,.15)}
+.maparea{flex:1;position:relative;overflow:auto;background:var(--bg)}
+.map-inner{position:relative;display:inline-block;transform-origin:top left}
+.map-inner img{display:block;max-width:none;user-select:none;pointer-events:none}
+.map-placeholder{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;min-width:500px;min-height:460px}
+.mtools{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:6px;z-index:20}
+.mt{width:36px;height:36px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--text);transition:all .15s;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.mt:hover{border-color:var(--accent);color:var(--accent)}
+.mode-bar{position:absolute;top:14px;left:14px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);display:none;overflow:hidden;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.mode-btn{padding:8px 16px;border:none;background:none;cursor:pointer;color:var(--muted);font-size:12px;font-weight:600;font-family:var(--font-b);transition:all .15s}
+.mode-btn:hover{color:var(--text)}
+.mode-btn.active{background:var(--surface2);color:var(--accent)}
+.leg{position:absolute;bottom:14px;left:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;font-size:11px;display:flex;flex-direction:column;gap:6px;z-index:20;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.lr{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.ld{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.pin{position:absolute;transform:translate(-50%,-100%);cursor:pointer;display:flex;flex-direction:column;align-items:center;z-index:5}
+.pin:hover{z-index:15}
+.pin-bubble{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2.5px solid rgba(255,255,255,.2);box-shadow:0 2px 12px rgba(0,0,0,.4);overflow:hidden;transition:transform .15s;position:relative}
+.pin-bubble:hover{transform:scale(1.2)}
+.pin-bubble.active{box-shadow:0 0 0 3px var(--accent3),0 2px 12px rgba(0,0,0,.4)}
+.pin-tail{width:2px;height:10px;margin-top:-1px;border-radius:0 0 2px 2px}
+.pin-dot{position:absolute;top:-1px;right:-1px;width:11px;height:11px;border-radius:50%;background:var(--amber);border:2px solid var(--bg)}
+.detail{position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:16px 20px;z-index:25;transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);max-height:58%;overflow-y:auto}
+.detail.open{transform:translateY(0)}
+.dh{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.dav{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;overflow:hidden;border:1.5px solid var(--border2)}
+.dname{font-family:var(--font-d);font-size:16px;font-weight:800;color:var(--text)}
+.dtbl{font-size:12px;color:var(--muted);margin-top:2px}
+.dcl{margin-left:auto;width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:18px;color:var(--muted);display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0}
+.dbody{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dlabel{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.cat-grid-d{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.cat-item-d{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--surface2)}
+.cat-img-d{height:52px;background:var(--surface3);display:flex;align-items:center;justify-content:center}
+.cat-name-d{font-size:10px;padding:4px 6px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-price-d{font-size:10px;padding:0 6px 5px;color:var(--accent)}
+.dsocs{display:flex;flex-direction:column;gap:5px}
+.dsoc{padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:12px;font-weight:500;cursor:pointer;background:var(--surface2);text-align:left;color:var(--text);font-family:var(--font-b);transition:all .15s}
+.dsoc:hover{border-color:var(--accent);color:var(--accent)}
+.drally{grid-column:1/-1;padding:10px 14px;border-radius:var(--radius-sm);background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.3);font-size:12px;color:var(--green);font-weight:500;line-height:1.6}
+.dblurb{grid-column:1/-1;font-size:12px;color:var(--muted);line-height:1.7;border-bottom:1px solid var(--border);padding-bottom:12px}
+.dltd{margin-top:8px;font-size:11px;color:var(--amber);font-weight:600}
+.rally-explorer{position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:14px 18px;z-index:24;max-height:50%;overflow-y:auto;display:none}
+.re-title{font-family:var(--font-d);font-size:14px;font-weight:800;margin-bottom:12px;color:var(--text);display:flex;align-items:center;justify-content:space-between}
+.re-rally{margin-bottom:14px}
+.re-name{font-size:12px;font-weight:700;color:var(--green);margin-bottom:6px}
+.re-members{display:flex;gap:6px;flex-wrap:wrap}
+.re-member{display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--border);border-radius:20px;cursor:pointer;font-size:11px;color:var(--text);background:var(--surface2);transition:all .15s}
+.re-member:hover{border-color:var(--green);background:rgba(74,222,128,.08)}
+.re-av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;overflow:hidden;flex-shrink:0}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;transition:transform .2s cubic-bezier(.4,0,.2,1);white-space:nowrap;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="app">
+<nav>
+  <div class="logo">AlleyMap</div>
+  <button class="nav-tab active" onclick="goto('dash',this)">Dashboard</button>
+  <button class="nav-tab" onclick="goto('form',this)">Artist submission</button>
+  <button class="nav-tab" onclick="goto('map',this)">Public map</button>
+  <button class="nav-pill">Artist sign-up</button>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="screen active" id="screen-dash">
+<div class="dash">
+  <div class="dash-side">
+    <div class="side-label">Your events</div>
+    <div id="dash-ev-list"></div>
+    <button class="add-btn" onclick="showToast('New event — coming in full build!')">+ New event</button>
+    <div class="side-label" style="margin-top:12px">Stamp rallies</div>
+    <div id="dash-rally-tags"></div>
+    <button class="add-btn" style="margin-top:6px" onclick="showToast('Create new rally')">+ New rally</button>
+  </div>
+  <div class="dash-main">
+    <div class="dash-toolbar">
+      <div class="dash-title" id="dash-ev-title">—</div>
+      <div class="dtabs">
+        <button class="dtab on" onclick="dTab(this,'overview')">Overview</button>
+        <button class="dtab" onclick="dTab(this,'queue')">Approvals <span style="background:var(--amber);color:#000;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:3px">2</span></button>
+        <button class="dtab" onclick="dTab(this,'rallies')">Stamp rallies</button>
+        <button class="dtab" onclick="dTab(this,'mapupload')">Floor plan</button>
+      </div>
+    </div>
+    <div class="dash-content" id="dash-content"></div>
+  </div>
+</div>
+</div>
+
+<!-- ARTIST FORM -->
+<div class="screen" id="screen-form">
+  <div class="form-outer" id="formOuter">
+    <div class="form-wrap">
+      <div class="form-hero">
+        <div class="form-hero-title" id="form-ev-title">Artist submission</div>
+        <div class="form-hero-sub">Your listing goes live once approved by the organiser</div>
+      </div>
+      <div class="form-section">
+        <div class="fs-title">Profile</div>
+        <div class="pfp-row">
+          <label style="cursor:pointer;flex-shrink:0">
+            <div class="pfp-circle" id="pfp-preview">Upload<br>photo</div>
+            <input type="file" accept="image/*" style="display:none" onchange="previewPfp(event)"/>
+          </label>
+          <div style="flex:1">
+            <div class="field"><label>Artist / booth name</label><input placeholder="e.g. StardustInk"/></div>
+            <div class="field"><label>Table number</label><input placeholder="e.g. A-03 — check your confirmation email"/></div>
+          </div>
+        </div>
+        <div class="field"><label>Short blurb — what are you bringing?</label><textarea placeholder="e.g. Hand-drawn magical girl prints, acrylic charms and limited sticker sets!"></textarea></div>
+      </div>
+      <div class="form-section">
+        <div class="fs-title">Social media</div>
+        <div class="socials-grid">
+          <div class="soc-row"><span class="soc-lbl">Twitter / X</span><input placeholder="@handle"/></div>
+          <div class="soc-row"><span class="soc-lbl">Instagram</span><input placeholder="@handle"/></div>
+          <div class="soc-row"><span class="soc-lbl">TikTok</span><input placeholder="@handle"/></div>
+          <div class="soc-row"><span class="soc-lbl">BlueSky</span><input placeholder="@handle"/></div>
+          <div class="soc-row"><span class="soc-lbl">Etsy</span><input placeholder="shop URL"/></div>
+          <div class="soc-row"><span class="soc-lbl">Website</span><input placeholder="yoursite.com"/></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="fs-title">Catalogue</div>
+        <div id="cat-list">
+          <div class="cat-item">
+            <label class="cat-thumb">+ photo<input type="file" accept="image/*" style="display:none" onchange="previewCat(event,this)"/></label>
+            <div class="cat-fields"><input placeholder="Item name (e.g. Sailor Moon A4 Print)"/><input placeholder="Price (e.g. £8)"/></div>
+          </div>
+        </div>
+        <button class="add-cat" onclick="addCatItem()">+ Add another item</button>
+      </div>
+      <div class="form-section">
+        <div class="fs-title">Stamp rally</div>
+        <div class="toggle-row" onclick="toggleField('rallyT','rallyEx')">
+          <div class="toggle-info"><div class="toggle-title">I'm part of a stamp rally</div><div class="toggle-sub">Toggle on to add rally details</div></div>
+          <div class="tbox" id="rallyT"><div class="tknob"></div></div>
+        </div>
+        <div class="extra" id="rallyEx">
+          <div class="field"><label>Rally name</label>
+            <select onchange="document.getElementById('newRN').style.display=this.value==='new'?'block':'none'">
+              <option value="">— Select or create —</option>
+              <option>Kawaii Collective</option><option>Galaxy Squad</option><option>Midlands Magic</option>
+              <option value="new">+ Create new rally</option>
+            </select>
+          </div>
+          <div class="field" id="newRN" style="display:none"><label>New rally name</label><input placeholder="e.g. Pastel Parade"/></div>
+          <div class="field"><label>Prize / reward info</label><textarea placeholder="e.g. Collect stamps from all 5 of us for a mystery goodie bag!" style="min-height:56px"></textarea></div>
+          <div class="field"><label>Stamps needed</label><input type="number" placeholder="e.g. 5" style="width:120px"/></div>
+          <div class="field"><label>Your stamp description (optional)</label><input placeholder="e.g. Pink star stamp on your rally card"/></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="fs-title">Limited items</div>
+        <div class="toggle-row" onclick="toggleField('ltdT',null)">
+          <div class="toggle-info"><div class="toggle-title">I have limited edition items</div><div class="toggle-sub">Flags your listing so attendees know to visit early</div></div>
+          <div class="tbox" id="ltdT"><div class="tknob"></div></div>
+        </div>
+      </div>
+      <div style="height:20px"></div>
+    </div>
+  </div>
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div style="font-family:var(--font-d);font-size:22px;font-weight:800">Submission received!</div>
+    <div style="font-size:13px;color:var(--muted);max-width:320px;text-align:center;line-height:1.7">Your listing is under review. You'll hear back once the organiser approves it.</div>
+    <button class="sbtn" style="margin-top:8px" onclick="resetForm()">Submit another</button>
+  </div>
+  <div class="submit-bar" id="submitBar">
+    <button class="sbtn">Save draft</button>
+    <button class="sbtn primary" onclick="submitForm()">Submit for approval</button>
+  </div>
+</div>
+
+<!-- PUBLIC MAP -->
+<div class="screen" id="screen-map">
+<div class="pub-wrap">
+  <div class="pub-side">
+    <div class="side-top">
+      <div class="ev-pick-label">Choose an event</div>
+      <div class="ev-picker" id="ev-picker"></div>
+      <input class="search-box" placeholder="Search artists, genres, rallies..." oninput="pubSearch(this.value)"/>
+      <div class="chips">
+        <button class="chip on" onclick="setFilter('all',this)">All</button>
+        <button class="chip ron" onclick="setFilter('rally',this)">Stamp rallies</button>
+        <button class="chip" onclick="setFilter('prints',this)">Prints</button>
+        <button class="chip" onclick="setFilter('charms',this)">Charms</button>
+        <button class="chip" onclick="setFilter('limited',this)">Limited</button>
+      </div>
+    </div>
+    <div class="pub-list" id="pubList"></div>
+    <button class="rally-btn" onclick="toggleRallyExplorer()">View stamp rally explorer</button>
+  </div>
+  <div class="maparea" id="maparea">
+    <div class="map-inner" id="mapInner">
+      <div class="map-placeholder" id="mapPlaceholder">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--border2)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <div id="placeholder-msg" style="color:var(--muted);font-size:13px;text-align:center;line-height:1.8">Select an event on the left<br>to see its floor plan and artists</div>
+      </div>
+      <div id="pins"></div>
+    </div>
+
+    <div class="mtools">
+      <button class="mt" onclick="pubZoom(1.2)">+</button>
+      <button class="mt" onclick="pubZoom(0.8)">−</button>
+      <button class="mt" onclick="pubReset()">↺</button>
+    </div>
+    <div class="leg">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Legend</div>
+      <div class="lr"><div class="ld" style="background:var(--accent)"></div>Artist</div>
+      <div class="lr"><div class="ld" style="background:var(--green)"></div>Stamp rally</div>
+      <div class="lr"><div class="ld" style="background:var(--accent3)"></div>Selected</div>
+    </div>
+    <div class="detail" id="detail">
+      <div class="dh">
+        <div class="dav" id="d-av"></div>
+        <div><div class="dname" id="d-name"></div><div class="dtbl" id="d-tbl"></div></div>
+        <button class="dcl" onclick="closeDetail()">×</button>
+      </div>
+      <div class="dbody" id="d-body"></div>
+    </div>
+    <div class="rally-explorer" id="rallyExplorer">
+      <div class="re-title">Stamp rally explorer <button class="dcl" onclick="toggleRallyExplorer()">×</button></div>
+      <div id="re-body"></div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+<div class="toast" id="toast-el"></div>
+
+<script>
+var EVENTS=[
+  {id:0,name:'MegaCon Birmingham 2026',date:'28–29 Mar 2026 · NEC Birmingham',status:'live',mapUrl:null,
+   rallies:['Kawaii Collective','Anime Art Rally'],
+   artists:[
+    {id:101,i:'SI',bg:'rgba(192,132,252,.18)',fg:'#c084fc',n:'StardustInk',tbl:'21',g:['Prints','Stickers','Magical girl'],r:'Kawaii Collective',s:['Twitter/X','Instagram','Etsy'],cat:[{name:'Sailor Moon Print',price:'£8'},{name:'Sticker Set',price:'£4'},{name:'Magic Badge',price:'£3'}],blurb:'Hand-drawn magical girl prints and limited sticker sets — come find me early for the limited run!',ltd:true,x:null,y:null},
+    {id:102,i:'MD',bg:'rgba(56,189,248,.15)',fg:'#38bdf8',n:'MechaDreams',tbl:'27',g:['Prints','Posters','Mecha'],r:null,s:['Twitter/X','ArtStation'],cat:[{name:'Gundam A3 Poster',price:'£12'},{name:'Mech Acrylic Charm',price:'£6'},{name:'Robot Enamel Pin',price:'£4'}],blurb:'Detailed mecha illustrations for the discerning robot fan. New Evangelion prints dropping at this con!',ltd:false,x:null,y:null},
+    {id:103,i:'YC',bg:'rgba(74,222,128,.15)',fg:'#4ade80',n:'YukiCrafts',tbl:'32',g:['Charms','Keyrings','Cozy'],r:'Kawaii Collective',s:['Instagram','BlueSky','Storenvy'],cat:[{name:'Cat Keyring',price:'£7'},{name:'Frog Charm',price:'£5'},{name:'Cozy Postcard',price:'£3'}],blurb:'Soft cozy vibes — charms and keyrings to brighten your bag.',ltd:false,x:null,y:null},
+    {id:104,i:'NS',bg:'rgba(244,114,182,.15)',fg:'#f472b6',n:'NeonSamurai',tbl:'17',g:['Prints','Action'],r:'Anime Art Rally',s:['Twitter/X','Instagram'],cat:[{name:'Samurai A4 Print',price:'£10'},{name:'Dragon A3 Poster',price:'£14'}],blurb:'Bold action art — dragons, warriors and neon nights.',ltd:true,x:null,y:null},
+    {id:105,i:'HS',bg:'rgba(74,222,128,.12)',fg:'#4ade80',n:'HanaStudio',tbl:'24',g:['Prints','Watercolour'],r:'Kawaii Collective',s:['Instagram','Etsy'],cat:[{name:'Cherry Blossom Print',price:'£11'},{name:'Botanical Bookmark Set',price:'£5'},{name:'Nature Card',price:'£3'}],blurb:'Delicate watercolour botanicals and nature prints. First time at MegaCon!',ltd:false,x:null,y:null},
+    {id:106,i:'PX',bg:'rgba(248,113,113,.15)',fg:'#f87171',n:'PixelPunch',tbl:'14',g:['Charms','Retro gaming','Prints'],r:'Anime Art Rally',s:['Twitter/X','BlueSky'],cat:[{name:'Pixel Art Charm',price:'£6'},{name:'Retro Gaming Print',price:'£9'},{name:'8-bit Enamel Pin',price:'£4'}],blurb:'Retro gaming love letters — 8-bit art for your walls and bags.',ltd:true,x:null,y:null},
+    {id:107,i:'AC',bg:'rgba(251,191,36,.15)',fg:'#fbbf24',n:'AnimeCoffeeArt',tbl:'32',g:['Prints','Cute','Chibi'],r:'Kawaii Collective',s:['Instagram','TikTok','Etsy'],cat:[{name:'Chibi Character Print',price:'£7'},{name:'Anime Sticker Pack',price:'£5'}],blurb:'Cute chibi art and cosy anime-inspired prints. Matching the listing on the MegaCon vendor list!',ltd:false,x:null,y:null},
+    {id:108,i:'GF',bg:'rgba(56,189,248,.12)',fg:'#38bdf8',n:'GrimFables',tbl:'22',g:['Prints','Dark fantasy','Gothic'],r:'Anime Art Rally',s:['Twitter/X','Instagram'],cat:[{name:'Dark Fantasy Print',price:'£12'},{name:'Gothic Charm',price:'£8'},{name:'Villain Poster',price:'£15'}],blurb:'Dark fantasy and gothic art for the villain-coded among us.',ltd:true,x:null,y:null},
+  ]},
+  {id:1,name:'MCM London 2026',date:'22–24 May 2026 · ExCeL London',status:'draft',mapUrl:null,
+   rallies:[],
+   artists:[]},
+  {id:2,name:'Hyper Japan 2026',date:'7–9 Mar 2026 · Tobacco Dock',status:'draft',mapUrl:null,rallies:[],artists:[]}
+];
+
+var dashIdx=0,pubIdx=-1,sel=null,zoom=1,filterVal='all',searchVal='',rallyOpen=false,curDashTab='overview',mapImgEl=null;
+
+// NAV
+function goto(s,btn){
+  document.querySelectorAll('.screen').forEach(function(e){e.classList.remove('active')});
+  document.querySelectorAll('.nav-tab').forEach(function(e){e.classList.remove('active')});
+  document.getElementById('screen-'+s).classList.add('active');
+  if(btn)btn.classList.add('active');
+}
+
+// DASHBOARD
+function buildDashEvList(){
+  var el=document.getElementById('dash-ev-list');el.innerHTML='';
+  EVENTS.forEach(function(ev,i){
+    var d=document.createElement('div');d.className='ev-card'+(i===dashIdx?' sel':'');
+    d.innerHTML='<div class="ev-name">'+ev.name+'</div><div class="ev-date">'+ev.date+'</div>'+
+      '<span class="ev-badge '+(ev.status==='live'?'b-live':'b-draft')+'">'+(ev.status==='live'?'Live':'Draft')+'</span>';
+    d.onclick=(function(idx,card){return function(){
+      dashIdx=idx;
+      document.querySelectorAll('.dash-side .ev-card').forEach(function(c){c.classList.remove('sel')});
+      card.classList.add('sel');
+      document.getElementById('dash-ev-title').textContent=EVENTS[idx].name;
+      document.getElementById('form-ev-title').textContent=EVENTS[idx].name+' — Artist submission';
+      buildDashRallyTags();
+      renderDashContent(curDashTab);
+    };})(i,d);
+    el.appendChild(d);
+  });
+}
+
+function buildDashRallyTags(){
+  var ev=EVENTS[dashIdx],el=document.getElementById('dash-rally-tags');el.innerHTML='';
+  if(!ev.rallies.length){el.innerHTML='<div style="font-size:11px;color:var(--muted);padding:4px 0">No rallies yet</div>';return;}
+  ev.rallies.forEach(function(r){
+    var d=document.createElement('div');d.className='rally-tag';d.style.marginBottom='4px';
+    d.textContent=r+' · '+ev.artists.filter(function(a){return a.r===r}).length+' artists';
+    el.appendChild(d);
+  });
+}
+
+function dTab(btn,tab){
+  curDashTab=tab;
+  document.querySelectorAll('.dtab').forEach(function(b){b.classList.remove('on')});
+  btn.classList.add('on');
+  renderDashContent(tab);
+}
+
+function renderDashContent(tab){
+  var ev=EVENTS[dashIdx],el=document.getElementById('dash-content');
+  if(tab==='overview'){
+    el.innerHTML='<div class="stats">'+
+      '<div class="stat"><div class="stat-n">'+ev.artists.length+'</div><div class="stat-l">Artists registered</div></div>'+
+      '<div class="stat"><div class="stat-n" style="color:var(--amber)">2</div><div class="stat-l">Awaiting approval</div></div>'+
+      '<div class="stat"><div class="stat-n" style="color:var(--green)">'+ev.rallies.length+'</div><div class="stat-l">Stamp rallies</div></div>'+
+      '<div class="stat"><div class="stat-n" style="color:var(--accent3)">'+ev.artists.filter(function(a){return!!a.r}).length+'</div><div class="stat-l">Rally participants</div></div>'+
+      '</div><div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Approved artists</div>'+
+      (ev.artists.length?ev.artists.map(function(a){return'<div class="q-item"><div class="q-av" style="background:'+a.bg+';color:'+a.fg+'">'+a.i+'</div><div class="q-info"><div class="q-name">'+a.n+'</div><div class="q-meta">Table '+a.tbl+' · '+a.g.join(', ')+(a.r?' · '+a.r:'')+'</div></div><div style="font-size:11px;color:var(--green);font-weight:600">✓ Live</div></div>';}).join(''):'<div style="color:var(--muted);font-size:13px;padding:16px 0">No artists yet for this event.</div>');
+  } else if(tab==='queue'){
+    el.innerHTML='<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Pending submissions for '+ev.name+'</div>'+
+      '<div class="q-item" id="qi1"><div class="q-av" style="background:rgba(244,114,182,.12);color:var(--accent2)">PP</div><div class="q-info"><div class="q-name">PastelPlanet</div><div class="q-meta">Table B-02 · Prints, Charms · Limited items</div></div><div class="q-actions"><button class="qbtn" onclick="showToast(\'Preview coming in full build\')">Preview</button><button class="qbtn no" onclick="rejectQ(\'qi1\')">Reject</button><button class="qbtn ok" onclick="approveQ(\'qi1\')">Approve</button></div></div>'+
+      '<div class="q-item" id="qi2"><div class="q-av" style="background:rgba(251,191,36,.1);color:var(--amber)">TT</div><div class="q-info"><div class="q-name">TokyoTanuki</div><div class="q-meta">Table B-08 · Charms, Folklore</div></div><div class="q-actions"><button class="qbtn" onclick="showToast(\'Preview coming in full build\')">Preview</button><button class="qbtn no" onclick="rejectQ(\'qi2\')">Reject</button><button class="qbtn ok" onclick="approveQ(\'qi2\')">Approve</button></div></div>';
+  } else if(tab==='rallies'){
+    el.innerHTML='<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Stamp rallies for '+ev.name+'</div>'+
+      (ev.rallies.length?ev.rallies.map(function(rn){
+        var m=ev.artists.filter(function(a){return a.r===rn});
+        return'<div class="rally-card"><div class="rc-name">'+rn+'</div><div class="rc-meta">'+m.length+' members</div><div class="rc-members">'+m.map(function(a){return'<span class="rc-pip">'+a.n+'</span>'}).join('')+'</div></div>';
+      }).join(''):'<div style="color:var(--muted);font-size:13px;padding:16px 0">No rallies yet.</div>')+
+      '<button class="add-btn" style="margin-top:8px" onclick="showToast(\'Create new rally\')">+ Create new rally</button>';
+  } else if(tab==='mapupload'){
+    var artistList = ev.artists.length
+      ? ev.artists.map(function(a){
+          var placed = a.x && a.y;
+          return '<div class="place-artist-btn'+(placed?' placed':'')+'" onclick="selectArtistToPlace('+a.id+','+ev.id+')" id="place-btn-'+a.id+'" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid '+(placed?'rgba(74,222,252,.3)':'var(--border)')+';border-radius:var(--radius-sm);background:'+(placed?'rgba(74,222,128,.07)':'var(--surface3)')+';cursor:pointer;margin-bottom:5px;transition:all .15s">'+
+            '<div style="width:28px;height:28px;border-radius:50%;background:'+a.bg+';color:'+a.fg+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">'+a.i+'</div>'+
+            '<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+a.n+'</div>'+
+            '<div style="font-size:10px;color:var(--muted)">'+(a.tbl?'Table '+a.tbl:'No table')+(placed?' · ✓ Placed':' · Click to place')+'</div></div>'+
+            (placed?'<div style="font-size:9px;color:var(--green);font-weight:600">✓</div>':'<div style="font-size:9px;color:var(--muted)">→</div>')+
+          '</div>';
+        }).join('')
+      : '<div style="font-size:11px;color:var(--muted);padding:8px 0">No approved artists yet.</div>';
+
+    el.innerHTML =
+      '<div style="display:grid;grid-template-columns:1fr 220px;gap:14px;height:100%">'+
+      '<div>'+
+        '<div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">'+
+          (ev.mapUrl
+            ? '<span style="color:var(--green);font-weight:600">✓ Floor plan uploaded.</span> Use AI to auto-place pins, or select an artist and click manually.'
+            : 'Upload the floor plan first, then place artist pins.')+
+        '</div>'+
+        (ev.mapUrl
+          ? '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">'+
+              '<button id="auto-pin-btn" onclick="autoPlacePins('+ev.id+')" style="padding:8px 16px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:rgba(192,132,252,.12);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-b);transition:all .15s">✨ Auto-place pins with AI</button>'+
+              '<div id="auto-pin-status" style="font-size:11px;color:var(--muted);font-weight:500;flex:1"></div>'+
+            '</div>'
+          : '')+
+        (ev.mapUrl
+          ? '<div style="position:relative;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface3)" id="dash-map-container">'+
+              '<img src="'+ev.mapUrl+'" style="width:100%;display:block;user-select:none" id="dash-map-img" ondragover="event.preventDefault()" ondrop="handlePinDrop(event,'+ev.id+')"/>'+
+              '<div id="dash-pins"></div>'+
+              '<div id="dash-pin-hint" style="display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;pointer-events:none">Click anywhere to place pin</div>'+
+            '</div>'
+          : '<label style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border:1.5px dashed var(--border2);border-radius:var(--radius);padding:32px;color:var(--muted);cursor:pointer;min-height:200px">'+
+              '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'+
+              '<div style="font-size:13px;font-weight:600">Click to upload floor plan</div>'+
+              '<div style="font-size:11px;opacity:.6">PNG or JPG</div>'+
+              '<input type="file" accept="image/*" style="display:none" onchange="dashMapLoad(event,'+ev.id+')"/>'+
+            '</label>')+
+        '<div style="margin-top:10px;display:flex;gap:8px;align-items:center">'+
+          '<div style="font-size:11px;color:var(--muted)">Submission link:</div>'+
+          '<div style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px;color:var(--muted);background:var(--surface2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">alleymap.co/submit/'+ev.name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'</div>'+
+          '<button class="qbtn" onclick="showToast(\'Link copied!\')">Copy</button>'+
+          (ev.mapUrl?'<label class="qbtn" style="cursor:pointer">Change map<input type="file" accept="image/*" style="display:none" onchange="dashMapLoad(event,'+ev.id+')"/></label>':'')+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;gap:0;overflow:hidden">'+
+        '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">Approved artists</div>'+
+        '<div style="flex:1;overflow-y:auto">'+artistList+'</div>'+
+        '<div id="placing-status" style="margin-top:8px;font-size:11px;color:var(--accent);font-weight:600;min-height:18px"></div>'+
+      '</div>'+
+      '</div>';
+
+    if(ev.mapUrl) renderDashPins(ev);
+    setupDashMapClick(ev);
+  }
+}
+
+function dashMapLoad(e,evId){
+  var f=e.target.files[0];if(!f)return;
+  var url=URL.createObjectURL(f);
+  var ev=EVENTS.find(function(x){return x.id===evId});
+  if(!ev)return;
+  ev.mapUrl=url;
+  ev.mapFile=f;
+  showToast('Floor plan uploaded!');
+  renderDashContent('mapupload');
+  if(pubIdx===evId)loadPubMap(evId);
+}
+
+async function autoPlacePins(evId){
+  var ev=EVENTS.find(function(x){return x.id===evId});
+  if(!ev||!ev.mapFile){showToast('No map file found — try re-uploading');return;}
+
+  var btn=document.getElementById('auto-pin-btn');
+  var status=document.getElementById('auto-pin-status');
+  if(btn){btn.disabled=true;btn.textContent='Analysing map...';}
+  if(status){status.style.color='var(--accent)';status.textContent='Sending map to AI — this takes about 10 seconds...';}
+
+  try{
+    // Convert image file to base64
+    var base64=await new Promise(function(res,rej){
+      var reader=new FileReader();
+      reader.onload=function(){res(reader.result.split(',')[1]);};
+      reader.onerror=rej;
+      reader.readAsDataURL(ev.mapFile);
+    });
+
+    // Build the artist table list for Claude to match against
+    var artistTableList=ev.artists.filter(function(a){return a.tbl;}).map(function(a){
+      return a.n+' → table "'+a.tbl+'"';
+    }).join('\n');
+
+    var response=await fetch('/.netlify/functions/analyze-map',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        imageBase64:base64,
+        imageType:ev.mapFile.type||'image/jpeg',
+        artistList:artistTableList
+      })
+    });
+
+    var data=await response.json();
+    if(data.error){throw new Error(data.error);}
+    var results=data.results;
+
+    if(!results.length){
+      if(status)status.textContent='AI couldn\'t find any matching table numbers on this map. Try placing pins manually.';
+      if(btn){btn.disabled=false;btn.textContent='Try again';}
+      return;
+    }
+
+    // Get the actual image dimensions to convert percentages to pixels
+    var img=document.getElementById('dash-map-img');
+    var naturalW=img.naturalWidth;
+    var naturalH=img.naturalHeight;
+
+    var placed=0;
+    results.forEach(function(r){
+      // Find the artist whose table matches
+      var artist=ev.artists.find(function(a){
+        return a.tbl&&a.tbl.trim().toLowerCase()===r.table.trim().toLowerCase();
+      });
+      if(artist){
+        artist.x=(r.xPct/100)*naturalW;
+        artist.y=(r.yPct/100)*naturalH;
+        placed++;
+      }
+    });
+
+    showToast('AI placed '+placed+' of '+ev.artists.filter(function(a){return a.tbl;}).length+' artists!');
+    if(status){
+      status.style.color='var(--green)';
+      status.textContent='✓ '+placed+' pins placed automatically. Adjust any that are off using the list below.';
+    }
+    if(btn){btn.disabled=false;btn.textContent='Re-run AI placement';}
+    renderDashContent('mapupload');
+    if(pubIdx===evId)renderPins();
+
+  }catch(err){
+    console.error(err);
+    if(status){status.style.color='var(--red)';status.textContent='Something went wrong: '+err.message;}
+    if(btn){btn.disabled=false;btn.textContent='Try again';}
+  }
+}
+
+var placingArtistId=null, placingEvId=null;
+
+function selectArtistToPlace(artistId, evId){
+  placingArtistId=artistId;
+  placingEvId=evId;
+  var ev=EVENTS.find(function(x){return x.id===evId});
+  var a=ev.artists.find(function(x){return x.id===artistId});
+  // highlight selected
+  document.querySelectorAll('.place-artist-btn').forEach(function(b){b.style.borderColor='var(--border)';b.style.background='var(--surface3)'});
+  var btn=document.getElementById('place-btn-'+artistId);
+  if(btn){btn.style.borderColor='var(--accent)';btn.style.background='rgba(192,132,252,.12)';}
+  var hint=document.getElementById('dash-pin-hint');
+  if(hint)hint.style.display='block';
+  var status=document.getElementById('placing-status');
+  if(status)status.textContent='Placing: '+a.n+' — click their spot on the map';
+  var img=document.getElementById('dash-map-img');
+  if(img)img.style.cursor='crosshair';
+}
+
+function setupDashMapClick(ev){
+  setTimeout(function(){
+    var img=document.getElementById('dash-map-img');
+    if(!img)return;
+    img.addEventListener('click',function(e){
+      if(!placingArtistId||placingEvId!==ev.id)return;
+      var r=img.getBoundingClientRect();
+      var scaleX=img.naturalWidth/img.offsetWidth;
+      var scaleY=img.naturalHeight/img.offsetHeight;
+      var px=(e.clientX-r.left)*scaleX;
+      var py=(e.clientY-r.top)*scaleY;
+      var a=ev.artists.find(function(x){return x.id===placingArtistId});
+      if(!a)return;
+      a.x=px; a.y=py;
+      // clear placing state
+      placingArtistId=null; placingEvId=null;
+      img.style.cursor='default';
+      var hint=document.getElementById('dash-pin-hint');
+      if(hint)hint.style.display='none';
+      var status=document.getElementById('placing-status');
+      if(status)status.textContent='';
+      showToast(a.n+' placed on map!');
+      // re-render the tab to update the artist list ticks
+      renderDashContent('mapupload');
+      // update public map too if it's showing this event
+      if(pubIdx===ev.id){renderPins();}
+    });
+  },100);
+}
+
+function renderDashPins(ev){
+  setTimeout(function(){
+    var container=document.getElementById('dash-pins');
+    var img=document.getElementById('dash-map-img');
+    if(!container||!img)return;
+    container.innerHTML='';
+    container.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none';
+    ev.artists.filter(function(a){return a.x&&a.y;}).forEach(function(a){
+      var scaleX=img.offsetWidth/img.naturalWidth;
+      var scaleY=img.offsetHeight/img.naturalHeight;
+      var px=a.x*scaleX; var py=a.y*scaleY;
+      var pin=document.createElement('div');
+      pin.style.cssText='position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;pointer-events:all;cursor:pointer;z-index:5';
+      pin.style.left=px+'px'; pin.style.top=py+'px';
+      pin.title=a.n+' · Table '+(a.tbl||'?')+' — click to move';
+      pin.innerHTML='<div style="width:26px;height:26px;border-radius:50%;background:'+a.bg+';color:'+a.fg+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;border:2px solid rgba(255,255,255,.3);box-shadow:0 1px 6px rgba(0,0,0,.4)">'+a.i+'</div>'+
+        '<div style="width:2px;height:6px;background:'+a.fg+';margin-top:-1px"></div>';
+      pin.addEventListener('click',function(e){
+        e.stopPropagation();
+        selectArtistToPlace(a.id,ev.id);
+      });
+      container.appendChild(pin);
+    });
+  },150);
+}
+
+function approveQ(id){var e=document.getElementById(id);if(!e)return;e.style.opacity='.4';e.style.pointerEvents='none';e.querySelector('.q-actions').innerHTML='<span style="font-size:11px;color:var(--green);font-weight:600">✓ Approved</span>';showToast('Artist approved!')}
+function rejectQ(id){var e=document.getElementById(id);if(!e)return;e.style.opacity='.4';e.style.pointerEvents='none';e.querySelector('.q-actions').innerHTML='<span style="font-size:11px;color:var(--red);font-weight:600">Rejected</span>';showToast('Rejected')}
+
+// FORM
+function toggleField(tid,eid){var t=document.getElementById(tid);t.classList.toggle('on');if(eid)document.getElementById(eid).classList.toggle('show',t.classList.contains('on'))}
+function addCatItem(){var l=document.getElementById('cat-list'),d=document.createElement('div');d.className='cat-item';d.innerHTML='<label class="cat-thumb">+ photo<input type="file" accept="image/*" style="display:none" onchange="previewCat(event,this)"/></label><div class="cat-fields"><input placeholder="Item name"/><input placeholder="Price (e.g. £8)"/></div>';l.appendChild(d)}
+function previewCat(e,i){var f=e.target.files[0];if(!f)return;i.closest('.cat-thumb').innerHTML='<img src="'+URL.createObjectURL(f)+'"/>';}
+function previewPfp(e){var f=e.target.files[0];if(!f)return;document.getElementById('pfp-preview').innerHTML='<img src="'+URL.createObjectURL(f)+'"/>';}
+function submitForm(){document.getElementById('formOuter').style.display='none';document.getElementById('submitBar').style.display='none';document.getElementById('successScreen').classList.add('show')}
+function resetForm(){document.getElementById('formOuter').style.display='block';document.getElementById('submitBar').style.display='flex';document.getElementById('successScreen').classList.remove('show')}
+
+// PUBLIC MAP — EVENT PICKER
+function buildEvPicker(){
+  var el=document.getElementById('ev-picker');el.innerHTML='';
+  EVENTS.forEach(function(ev){
+    var dot=ev.status==='live'?'var(--green)':'var(--amber)';
+    var badge=ev.status==='live'
+      ?'<span class="ev-pick-badge" style="background:rgba(74,222,128,.15);color:var(--green);border:1px solid rgba(74,222,128,.3)">Live</span>'
+      :'<span class="ev-pick-badge" style="background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.3)">Draft</span>';
+    var btn=document.createElement('button');
+    btn.className='ev-pick-btn'+(ev.id===pubIdx?' active':'');
+    btn.innerHTML='<div class="ev-pick-dot" style="background:'+dot+'"></div>'+
+      '<div class="ev-pick-info"><div class="ev-pick-name">'+ev.name+'</div><div class="ev-pick-date">'+ev.date+'</div></div>'+badge;
+    btn.onclick=(function(id){return function(){selectPubEvent(id);};})(ev.id);
+    el.appendChild(btn);
+  });
+}
+
+function selectPubEvent(id){
+  pubIdx=id;sel=null;filterVal='all';searchVal='';
+  document.querySelectorAll('.ev-pick-btn').forEach(function(b){b.classList.remove('active')});
+  document.querySelectorAll('.ev-pick-btn')[id].classList.add('active');
+  document.querySelectorAll('.chips .chip').forEach(function(c){c.classList.remove('on','ron')});
+  document.querySelector('.chips .chip').classList.add('on');
+  document.querySelector('.search-box').value='';
+  closeDetail();
+  document.getElementById('rallyExplorer').style.display='none';rallyOpen=false;
+  loadPubMap(id);
+  renderList();
+  showToast('Showing '+EVENTS[id].name);
+}
+
+function loadPubMap(id){
+  var ev=EVENTS[id];
+  var inner=document.getElementById('mapInner');
+  var ph=document.getElementById('mapPlaceholder');
+  if(mapImgEl&&mapImgEl.parentNode){mapImgEl.parentNode.removeChild(mapImgEl);mapImgEl=null;}
+  zoom=1;inner.style.transform='';inner.style.width='';inner.style.height='';
+  renderPins();
+  if(ev.mapUrl){
+    ph.style.display='none';
+    mapImgEl=document.createElement('img');
+    mapImgEl.src=ev.mapUrl;
+    mapImgEl.style.cssText='display:block;user-select:none;pointer-events:none;max-width:none';
+    inner.insertBefore(mapImgEl,inner.firstChild);
+    var tmp=new Image();
+    tmp.onload=function(){inner.style.width=tmp.naturalWidth+'px';inner.style.height=tmp.naturalHeight+'px';renderPins();};
+    tmp.src=ev.mapUrl;
+    document.getElementById('modeBar').style.display='none';
+  } else {
+    ph.style.display='flex';
+    document.getElementById('placeholder-msg').innerHTML=
+      ev.status==='draft'
+        ?'This event is still in draft<br><span style="font-size:11px;opacity:.6">Check back closer to the date</span>'
+        :'No floor plan uploaded yet<br><span style="font-size:11px;opacity:.6">The organiser hasn\'t uploaded one yet</span>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  buildDashEvList();
+  buildDashRallyTags();
+  document.getElementById('dash-ev-title').textContent=EVENTS[0].name;
+  document.getElementById('form-ev-title').textContent=EVENTS[0].name+' — Artist submission';
+  renderDashContent('overview');
+  buildEvPicker();
+  renderList();
+});
+
+function renderPins(){
+  var c=document.getElementById('pins');c.innerHTML='';
+  if(pubIdx<0)return;
+  var ev=EVENTS[pubIdx];
+  if(!ev||!ev.mapUrl)return;
+  filteredArtists().forEach(function(a){
+    var isSel=sel&&sel.id===a.id;
+    var bg=isSel?'rgba(56,189,248,.35)':a.r?'rgba(74,222,128,.3)':a.bg;
+    var fg=isSel?'#38bdf8':a.r?'#4ade80':a.fg;
+    var pin=document.createElement('div');pin.className='pin';
+    pin.style.left=a.x+'px';pin.style.top=a.y+'px';
+    pin.innerHTML='<div class="pin-bubble'+(isSel?' active':'')+'" style="background:'+bg+';color:'+fg+'">'+a.i+(a.r?'<div class="pin-dot"></div>':'')+'</div><div class="pin-tail" style="background:'+fg+'"></div>';
+    pin.addEventListener('click',function(){pickArtist(a);});
+    c.appendChild(pin);
+  });
+}
+
+function filteredArtists(){
+  if(pubIdx<0)return[];
+  var ev=EVENTS[pubIdx];if(!ev)return[];
+  return ev.artists.filter(function(a){
+    var mq=!searchVal||a.n.toLowerCase().includes(searchVal)||a.g.some(function(g){return g.toLowerCase().includes(searchVal)});
+    var mf=filterVal==='all'?true:filterVal==='rally'?!!a.r:filterVal==='limited'?a.ltd:a.g.map(function(g){return g.toLowerCase()}).includes(filterVal);
+    return mq&&mf;
+  });
+}
+
+function renderList(){
+  var list=document.getElementById('pubList');list.innerHTML='';
+  if(pubIdx<0){list.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;line-height:1.8">Select an event above<br>to see its artists</div>';return;}
+  var ev=EVENTS[pubIdx];
+  var artists=filteredArtists();
+  if(!ev.artists.length){list.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;line-height:1.8">'+(ev.status==='draft'?'This event is still in draft.':'No artists registered yet.')+'</div>';return;}
+  if(!artists.length){list.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;line-height:1.8">No artists match your search.<br>Try a different filter.</div>';return;}
+  artists.forEach(function(a){
+    var d=document.createElement('div');d.className='pub-card'+(sel&&sel.id===a.id?' sel':'');
+    d.onclick=function(){pickArtist(a);};
+    d.innerHTML='<div class="pc-top"><div class="pc-av" style="background:'+a.bg+';color:'+a.fg+'">'+a.i+'</div><div><div class="pc-name">'+a.n+'</div><div class="pc-tbl">'+(a.tbl?'Table '+a.tbl:'No table set')+'</div></div></div>'+
+      (a.g.length?'<div class="pc-tags">'+a.g.map(function(g){return'<span class="ptg">'+g+'</span>'}).join('')+(a.r?'<span class="ptg r">'+a.r+'</span>':'')+(a.ltd?'<span class="ptg l">Limited</span>':'')+'</div>':'')+
+      (a.s.length?'<div class="pc-socs">'+a.s.map(function(s){return'<span class="pc-soc">'+s+'</span>'}).join('')+'</div>':'');
+    list.appendChild(d);
+  });
+}
+
+function pickArtist(a){
+  sel=a;renderPins();renderList();
+  var dav=document.getElementById('d-av');dav.textContent=a.i;dav.style.background=a.bg;dav.style.color=a.fg;
+  document.getElementById('d-name').textContent=a.n;
+  document.getElementById('d-tbl').textContent=(a.tbl?'Table '+a.tbl:'')+(a.g.length?' · '+a.g.join(', '):'');
+  document.getElementById('d-body').innerHTML=
+    (a.blurb?'<div class="dblurb">'+a.blurb+'</div>':'')+
+    (a.r?'<div class="drally">Part of the <strong>'+a.r+'</strong> stamp rally — collect stamps from all members for a goodie bag!</div>':'')+
+    '<div><div class="dlabel">Catalogue</div><div class="cat-grid-d">'+(a.cat.length?a.cat.map(function(c){return'<div class="cat-item-d"><div class="cat-img-d"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--border2)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div><div class="cat-name-d">'+c.name+'</div><div class="cat-price-d">'+c.price+'</div></div>'}).join(''):'<div style="font-size:11px;color:var(--muted);padding:4px">No items listed</div>')+'</div>'+(a.ltd?'<div class="dltd">⚡ Limited items — visit early!</div>':'')+'</div>'+
+    (a.s.length?'<div><div class="dlabel">Find them on</div><div class="dsocs">'+a.s.map(function(s){return'<button class="dsoc">'+s+'</button>'}).join('')+'</div></div>':'');
+  document.getElementById('detail').classList.add('open');
+  document.getElementById('rallyExplorer').style.display='none';rallyOpen=false;
+}
+
+function closeDetail(){sel=null;renderPins();renderList();document.getElementById('detail').classList.remove('open');}
+function pubSearch(q){searchVal=q.toLowerCase();renderPins();renderList();}
+function setFilter(f,btn){
+  filterVal=f;
+  document.querySelectorAll('.chips .chip').forEach(function(c){c.classList.remove('on','ron')});
+  btn.classList.add(f==='rally'?'ron':'on');
+  renderPins();renderList();
+}
+
+function toggleRallyExplorer(){
+  rallyOpen=!rallyOpen;
+  var el=document.getElementById('rallyExplorer');el.style.display=rallyOpen?'block':'none';
+  if(rallyOpen){
+    document.getElementById('detail').classList.remove('open');
+    if(pubIdx<0){document.getElementById('re-body').innerHTML='<div style="color:var(--muted);font-size:12px">Select an event first.</div>';return;}
+    var ev=EVENTS[pubIdx];
+    var rallies={};
+    ev.artists.filter(function(a){return a.r;}).forEach(function(a){if(!rallies[a.r])rallies[a.r]=[];rallies[a.r].push(a);});
+    var html='';
+    if(!Object.keys(rallies).length){html='<div style="color:var(--muted);font-size:12px;padding:6px 0">No stamp rallies for this event yet.</div>';}
+    Object.keys(rallies).forEach(function(rn){
+      html+='<div class="re-rally"><div class="re-name">'+rn+'</div><div class="re-members">';
+      rallies[rn].forEach(function(a){
+        var aid=a.id,eidx=pubIdx;
+        html+='<div class="re-member" onclick="(function(){var a=EVENTS['+eidx+'].artists.find(function(x){return x.id==='+aid+'});if(a)pickArtist(a);})()"><div class="re-av" style="background:'+a.bg+';color:'+a.fg+'">'+a.i+'</div>'+a.n+(a.tbl?' · '+a.tbl:'')+'</div>';
+      });
+      html+='</div></div>';
+    });
+    document.getElementById('re-body').innerHTML=html;
+  }
+}
+
+function pubZoom(f){zoom=Math.min(Math.max(zoom*f,.25),4);document.getElementById('mapInner').style.transform='scale('+zoom+')';document.getElementById('mapInner').style.transformOrigin='top left';}
+function pubReset(){zoom=1;document.getElementById('mapInner').style.transform='';}
+function showToast(msg){var t=document.getElementById('toast-el');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2400);}
+</script>
+</body>
+</html>
