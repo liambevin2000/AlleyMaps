@@ -1102,7 +1102,7 @@ function openArtistPanel(artistId){
   if(tablemates.length){
     html+='<div class="ap-shared-notice">👥 This table is shared with '+tablemates.length+' other artist'+(tablemates.length>1?'s':'')+'<div class="ap-other-artists">';
     tablemates.forEach(function(t){
-      html+='<button class="ap-other-btn" onclick="openArtistPanel('+t.id+')">'+t.n+'</button>';
+      html+='<button class="ap-other-btn" onclick="openArtistPanel(\''+t.id+'\')">'+t.n+'</button>';
     });
     html+='</div></div>';
   }
@@ -1182,7 +1182,7 @@ function toggleRallyOverlay(){
     Object.keys(rallies).forEach(function(rn){
       html+='<div class="ro-rally"><div class="ro-rally-name">🎟 '+rn+'</div><div class="ro-members">';
       rallies[rn].forEach(function(a){
-        html+='<div class="ro-member" onclick="openArtistPanel('+a.id+')"><div class="ro-av" style="background:'+a.bg+';color:'+a.fg+'">'+a.i+'</div>'+a.n+(a.tbl?' · '+a.tbl:'')+'</div>';
+        html+='<div class="ro-member" onclick="openArtistPanel(\''+a.id+'\')"><div class="ro-av" style="background:'+a.bg+';color:'+a.fg+'">'+a.i+'</div>'+a.n+(a.tbl?' · '+a.tbl:'')+'</div>';
       });
       html+='</div></div>';
     });
@@ -1379,7 +1379,7 @@ function renderDashContent(tab){
     var artistList=ev.artists.length
       ?ev.artists.map(function(a){
           var placed=a.x&&a.y;
-          return'<button class="place-btn'+(placed?' placed':'')+(placingId===a.id&&placingEvId===ev.id?' selecting':'')+'" id="pb_'+a.id+'" onclick="selectToPlace('+a.id+','+ev.id+')">'+
+          return'<button class="place-btn'+(placed?' placed':'')+(placingId===a.id&&placingEvId===ev.id?' selecting':'')+'" id="pb_'+a.id+'" onclick="selectToPlace(\''+a.id+'\',\''+ev.id+'\')">'+
             '<div style="width:26px;height:26px;border-radius:50%;background:'+a.bg+';color:'+a.fg+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;font-family:var(--fd)">'+a.i+'</div>'+
             '<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+a.n+'</div>'+
             '<div style="font-size:10px;color:var(--mut);font-weight:500">'+(a.tbl?'Table '+a.tbl:'No table')+(placed?' · ✓ Placed':' · Click to place')+'</div></div>'+
