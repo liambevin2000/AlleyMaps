@@ -1818,7 +1818,13 @@ async function dashMapLoad(e,evId){
   ev.mapUrl=url;ev.mapFile=f;
 
   // Save URL to events table
-  await db.from('events').update({map_url:url}).eq('id',evId);
+  var updateRes=await db.from('events').update({map_url:url,map_status:'map-available'}).eq('id',evId);
+  if(updateRes&&updateRes.error){
+    console.error('Failed to save map URL:',updateRes.error);
+    showToast('Upload error: could not save map URL');
+    return;
+  }
+  console.log('Map URL saved to database:',url);
 
   showToast('Floor plan uploaded!');
   renderDashContent('floorplan');
