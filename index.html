@@ -1088,8 +1088,11 @@ function openArtistPanel(artistId){
   // Close btn + header
   html+='<div class="ap-header">';
   html+='<button class="ap-close" onclick="closeArtistPanel()">×</button>';
-  html+='<div class="ap-av-row"><div class="ap-av" style="background:'+a.bg+';color:'+a.fg+'">'+a.i+'</div>';
-  html+='<div><div class="ap-name">'+a.n+'</div><div class="ap-tbl">Table '+a.tbl+' · '+a.g.join(', ')+'</div></div></div>';
+  var avContent=a.pfp
+    ?'<img src="'+a.pfp+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>'
+    :a.i;
+  html+='<div class="ap-av-row"><div class="ap-av" style="background:'+a.bg+';color:'+a.fg+'">'+avContent+'</div>';
+  html+='<div><div class="ap-name">'+a.n+'</div><div class="ap-tbl">Table '+a.tbl+(a.g.length?' · '+a.g.join(', '):'')+'</div></div></div>';
   html+='<div class="ap-tags">';
   a.g.forEach(function(g){html+='<span class="ap-tag">'+g+'</span>';});
   if(a.r)html+='<span class="ap-tag rally">🎟 '+a.r+'</span>';
@@ -1128,7 +1131,10 @@ function openArtistPanel(artistId){
     html+='<div class="ap-section"><div class="ap-sec-title">Catalogue</div>';
     html+='<div class="catalogue-grid">';
     a.cat.forEach(function(item){
-      html+='<div class="cat-card"><div class="cat-img"><div class="cat-img-ph">🎨</div></div>';
+      var imgContent=item.imgUrl
+        ?'<img src="'+item.imgUrl+'" style="width:100%;height:100%;object-fit:cover"/>'
+        :'<div class="cat-img-ph">🎨</div>';
+      html+='<div class="cat-card"><div class="cat-img">'+imgContent+'</div>';
       html+='<div class="cat-info"><div class="cat-name">'+item.name+'</div><div class="cat-price">'+item.price+'</div></div></div>';
     });
     html+='</div></div>';
@@ -1643,6 +1649,7 @@ async function loadAllArtists(){
       r:a.rally_name||null, s:a.socials||[], cat:a.catalogue||[],
       blurb:a.blurb||'', ltd:a.limited||false,
       x:a.pin_x||null, y:a.pin_y||null,
+      pfp:a.profile_pic_url||null,
       vc:a.verify_code||'', vp:a.verify_platform||''
     });
   });
@@ -1719,7 +1726,6 @@ async function submitForm(){
   var limited=document.getElementById('ltdT').classList.contains('on');
   var initials=name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
 
-  // Pick a colour from palette based on name
   var cols=[
     {bg:'#ede7f6',fg:'#7c4dff'},{bg:'#e0f7f4',fg:'#00897b'},
     {bg:'#fff8e1',fg:'#f57f17'},{bg:'#fce4ec',fg:'#c2185b'},
@@ -1728,10 +1734,37 @@ async function submitForm(){
   ];
   var col=cols[name.charCodeAt(0)%cols.length];
 
-  // Upload profile pic if one was selected
+  var btn=document.querySelector('.submit-bar .sbtn.p');
+  if(btn){btn.disabled=true;btn.textContent='Uploading images...';}
+
+  // Upload profile pic
   var pfpUrl=null;
-  var pfpImg=document.querySelector('#pfpPreview img');
-  // Profile pic is local blob only in prototype — skip upload for now
+  var pfpFile=document.querySelector('#pfpPreview').closest('label').querySelector('input[type=file]');
+  if(pfpFile&&pfpFile.files&&pfpFile.files[0]){
+    var f=pfpFile.files[0];
+    var pfpPath='profiles/'+Date.now()+'-'+f.name.replace(/[^a-zA-Z0-9.]/g,'_');
+    var pfpUp=await db.storage.from('artist-images').upload(pfpPath,f,{upsert:true});
+    if(!pfpUp.error){
+      pfpUrl=db.storage.from('artist-images').getPublicUrl(pfpPath).data.publicUrl;
+    }
+  }
+
+  // Upload catalogue images
+  for(var ci=0;ci<catalogue.length;ci++){
+    var catInput=document.querySelectorAll('.cat-item')[ci];
+    if(!catInput)continue;
+    var catFile=catInput.querySelector('input[type=file]');
+    if(catFile&&catFile.files&&catFile.files[0]){
+      var cf=catFile.files[0];
+      var catPath='catalogue/'+Date.now()+'-'+ci+'-'+cf.name.replace(/[^a-zA-Z0-9.]/g,'_');
+      var catUp=await db.storage.from('artist-images').upload(catPath,cf,{upsert:true});
+      if(!catUp.error){
+        catalogue[ci].imgUrl=db.storage.from('artist-images').getPublicUrl(catPath).data.publicUrl;
+      }
+    }
+  }
+
+  if(btn)btn.textContent='Submitting...';
 
   var insert={
     event_id:evId, name:name, initials:initials,
@@ -1740,11 +1773,9 @@ async function submitForm(){
     rally_name:rallyName||null, limited:limited,
     verify_code:code, verify_platform:platform,
     bg_color:col.bg, fg_color:col.fg,
+    profile_pic_url:pfpUrl,
     status:'pending', genres:[]
   };
-
-  var btn=document.querySelector('.submit-bar .sbtn.p');
-  if(btn){btn.disabled=true;btn.textContent='Submitting...';}
 
   var res=await db.from('artists').insert(insert);
   if(res.error){
