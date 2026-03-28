@@ -2126,31 +2126,68 @@ var _origRenderDash=renderDashContent;
 renderDashContent=async function(tab){
   if(tab==='queue'){
     var el=document.getElementById('dashContent');if(!el)return;
-    var ev=EVENTS.find(function(e){return e.id===dashEvId;});
-    el.innerHTML='<div style="font-size:12px;color:var(--mut);margin-bottom:12px;font-weight:500">Loading pending submissions…</div>';
+    el.innerHTML='<div style="font-size:12px;color:var(--mut);margin-bottom:16px;font-weight:500">Loading pending submissions…</div>';
     var pending=await loadPendingArtists();
     if(!pending.length){
       el.innerHTML='<div style="font-size:13px;color:var(--mut);padding:14px 0;font-weight:500">No pending submissions for this event.</div>';
       return;
     }
-    el.innerHTML='<div style="font-size:12px;color:var(--mut);margin-bottom:12px;font-weight:500">'+pending.length+' submission'+(pending.length>1?'s':'')+' awaiting verification &amp; approval</div>'+
+    el.innerHTML='<div style="font-size:12px;color:var(--mut);margin-bottom:16px;font-weight:500">'+pending.length+' submission'+(pending.length>1?'s':'')+' awaiting verification &amp; approval</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">'+
       pending.map(function(a){
-        return '<div class="q-item" id="qi_'+a.id+'" data-artist-id="'+a.id+'">'+
-          '<div class="q-av" style="background:'+(a.bg_color||'#ede7f6')+';color:'+(a.fg_color||'#7c4dff')+'">'+(a.initials||a.name.slice(0,2).toUpperCase())+'</div>'+
-          '<div class="q-info">'+
-            '<div class="q-name">'+a.name+'</div>'+
-            '<div class="q-meta">Table '+(a.table_number||'?')+' · '+(a.rally_name?a.rally_name+' rally':'No rally')+(a.limited?' · Limited items':'')+'</div>'+
-            '<div class="verify-platform">Verify via: '+(a.verify_platform||'Not specified')+'</div>'+
+        // Profile pic or initials avatar
+        var avStyle='width:56px;height:56px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;font-family:var(--fd);background:'+(a.bg_color||'#ede7f6')+';color:'+(a.fg_color||'#7c4dff')+';overflow:hidden;border:2px solid var(--brd)';
+        var avContent=a.profile_pic_url
+          ?'<img src="'+a.profile_pic_url+'" style="width:100%;height:100%;object-fit:cover"/>'
+          :(a.initials||a.name.slice(0,2).toUpperCase());
+
+        // Catalogue preview — first 3 images as small thumbnails
+        var catImgs=(a.catalogue||[]).filter(function(c){return c.imgUrl;}).slice(0,3);
+        var catHtml=catImgs.length
+          ?'<div style="display:flex;gap:4px;margin-bottom:12px">'+
+            catImgs.map(function(c){return'<div style="flex:1;height:64px;border-radius:6px;overflow:hidden;border:1px solid var(--brd);background:var(--surf3)"><img src="'+c.imgUrl+'" style="width:100%;height:100%;object-fit:contain"/></div>';}).join('')+
+            (catImgs.length<(a.catalogue||[]).filter(function(c){return c.imgUrl;}).length?'<div style="flex:0 0 32px;height:64px;border-radius:6px;background:var(--surf3);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--mut);font-weight:700">+'+((a.catalogue||[]).filter(function(c){return c.imgUrl;}).length-3)+'</div>':'')
+          +'</div>'
+          :'<div style="height:48px;border-radius:6px;background:var(--surf3);border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--mut);margin-bottom:12px;font-weight:500">No catalogue images uploaded</div>';
+
+        // Socials
+        var socsHtml=(a.socials||[]).length
+          ?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">'+
+            (a.socials||[]).map(function(s){return'<span style="padding:2px 8px;border-radius:10px;background:var(--surf3);border:1px solid var(--brd);font-size:10px;color:var(--mut);font-weight:600">'+s.p+': '+s.h+'</span>';}).join('')+
+          '</div>'
+          :'';
+
+        return '<div id="qi_'+a.id+'" data-artist-id="'+a.id+'" style="background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column">'+
+          // Header
+          '<div style="padding:16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:12px">'+
+            '<div style="'+avStyle+'">'+avContent+'</div>'+
+            '<div style="flex:1;min-width:0">'+
+              '<div style="font-size:15px;font-weight:800;color:var(--txt);font-family:var(--fd)">'+a.name+'</div>'+
+              '<div style="font-size:11px;color:var(--mut);margin-top:2px;font-weight:500">'+
+                'Table '+(a.table_number||'?')+
+                (a.rally_name?' · 🎟 '+a.rally_name:'')+
+                (a.limited?' · ⚡ Limited':'')+'</div>'+
+            '</div>'+
+            '<div style="text-align:right;flex-shrink:0">'+
+              '<div style="font-size:9px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Verify code</div>'+
+              '<div style="font-family:var(--fd);font-size:16px;font-weight:900;color:var(--acc);letter-spacing:.08em">'+(a.verify_code||'—')+'</div>'+
+              '<div style="font-size:10px;color:var(--mut);margin-top:1px;font-weight:500">via '+(a.verify_platform||'?')+'</div>'+
+            '</div>'+
           '</div>'+
-          '<div class="q-actions">'+
-            '<div><div style="font-size:9px;color:var(--mut);font-weight:600;margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em">Code to match</div>'+
-            '<div class="verify-code-badge">'+(a.verify_code||'—')+'</div></div>'+
-            '<button class="qbtn" onclick="showToast(\'Blurb: '+(a.blurb||'None').replace(/'/g,'')+'\')">Preview</button>'+
-            '<button class="qbtn no" data-qid="qi_'+a.id+'" onclick="rejectQ(this.getAttribute(\'data-qid\'))">Reject</button>'+
-            '<button class="qbtn ok" data-qid="qi_'+a.id+'" onclick="approveQ(this.getAttribute(\'data-qid\'))">Approve</button>'+
+          // Body
+          '<div style="padding:14px;flex:1">'+
+            (a.blurb?'<div style="font-size:12px;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:12px;background:var(--surf2);border-radius:var(--rs);padding:10px 12px;border:1px solid var(--brd)">'+a.blurb+'</div>':'')+
+            catHtml+
+            socsHtml+
+          '</div>'+
+          // Footer actions
+          '<div style="padding:12px 14px;border-top:1px solid var(--brd);display:flex;gap:8px;align-items:center;background:var(--surf2)">'+
+            '<button class="qbtn no" data-qid="qi_'+a.id+'" onclick="rejectQ(this.getAttribute(\'data-qid\'))">✕ Reject</button>'+
+            '<button class="qbtn ok" style="flex:1;padding:8px" data-qid="qi_'+a.id+'" onclick="approveQ(this.getAttribute(\'data-qid\'))">✓ Approve &amp; publish</button>'+
           '</div>'+
         '</div>';
-      }).join('');
+      }).join('')+
+      '</div>';
     return;
   }
   _origRenderDash(tab);
