@@ -1379,10 +1379,10 @@ function renderDashContent(tab){
     var artistList=ev.artists.length
       ?ev.artists.map(function(a){
           var placed=a.x&&a.y;
-          return'<button class="place-btn'+(placed?' placed':'')+(placingId===a.id&&placingEvId===ev.id?' selecting':'')+'" id="pb_'+a.id+'" data-aid="'+a.id+'" data-eid="'+ev.id+'" onclick="selectToPlaceByData(this)">'+
+          return'<button class="place-btn'+(placed?' placed':'')+(placingId===a.id&&placingEvId===ev.id?' selecting':'')+'" id="pb_'+a.id+'" data-aid="'+a.id+'" data-eid="'+ev.id+'">'+
             '<div style="width:26px;height:26px;border-radius:50%;background:'+a.bg+';color:'+a.fg+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;font-family:var(--fd)">'+a.i+'</div>'+
             '<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+a.n+'</div>'+
-            '<div style="font-size:10px;color:var(--mut);font-weight:500">'+(a.tbl?'Table '+a.tbl:'No table')+(placed?' · ✓ Placed':' · Click to place')+'</div></div>'+
+            '<div style="font-size:10px;color:var(--mut);font-weight:500">'+(a.tbl?'Table '+a.tbl:'No table')+(placed?' · Placed':' · Click to place')+'</div></div>'+
             (placed?'<span style="font-size:11px;color:var(--grn);font-weight:700">✓</span>':'<span style="font-size:11px;color:var(--mut)">→</span>')+
           '</button>';
         }).join('')
@@ -1422,6 +1422,19 @@ function renderDashContent(tab){
     '</div>';
 
     if(ev.mapUrl){renderDashMapPins(ev);setupDashMapClick(ev);}
+
+    // Use event delegation for place buttons — avoids onclick UUID issues
+    setTimeout(function(){
+      var container=document.querySelector('#dashContent .place-btn')&&document.querySelector('#dashContent');
+      if(!container)return;
+      container.addEventListener('click',function(e){
+        var btn=e.target.closest('.place-btn');
+        if(!btn)return;
+        var aid=btn.getAttribute('data-aid');
+        var eid=btn.getAttribute('data-eid');
+        if(aid&&eid)selectToPlace(aid,eid);
+      });
+    },100);
   }
 }
 
