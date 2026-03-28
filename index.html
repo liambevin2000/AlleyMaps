@@ -577,14 +577,13 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
           </div>
         </div>
         <div class="fsec">
-          <div class="fsec-title">Catalogue</div>
-          <div id="catList">
-            <div class="cat-item">
-              <label class="cat-thumb">+ photo<input type="file" accept="image/*" style="display:none" onchange="prevCat(event,this)"/></label>
-              <div class="cat-fields"><input placeholder="Item name (e.g. Sailor Moon A4 Print)"/><input placeholder="Price (e.g. £8)"/></div>
-            </div>
-          </div>
-          <button class="add-cat-btn" onclick="addCat()">+ Add another item</button>
+          <div class="fsec-title">Catalogue images</div>
+          <div style="font-size:11px;color:var(--mut);margin-bottom:12px;font-weight:500">Upload images of your work — prints, charms, anything you're bringing. These show as a carousel on your listing. You can design these however you like with prices included in the image.</div>
+          <div id="catList" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px"></div>
+          <label style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;border:1.5px dashed var(--brd2);border-radius:var(--rs);color:var(--mut);cursor:pointer;font-size:12px;font-weight:600;transition:all .15s" onmouseover="this.style.borderColor='var(--acc)';this.style.color='var(--acc)'" onmouseout="this.style.borderColor='var(--brd2)';this.style.color='var(--mut)'">
+            + Add catalogue image
+            <input type="file" accept="image/*" multiple style="display:none" onchange="addCatImages(event)"/>
+          </label>
         </div>
         <div class="fsec">
           <div class="fsec-title">Stamp rally</div>
@@ -858,6 +857,62 @@ function filterVendorCards(q,evId){
     var match=!q||a.n.toLowerCase().includes(lq)||a.g.some(function(g){return g.toLowerCase().includes(lq);});
     c.style.display=match?'':'none';
   });
+}
+
+function initCarousel(cid){
+  var cont=document.getElementById(cid);if(!cont)return;
+  var slides=cont.querySelectorAll('.car-slide');
+  if(!slides.length)return;
+  cont._idx=0;
+  renderCarousel(cid);
+}
+
+function renderCarousel(cid){
+  var cont=document.getElementById(cid);if(!cont)return;
+  var slides=cont.querySelectorAll('.car-slide');
+  var n=slides.length;
+  var cur=cont._idx||0;
+  var W=cont.offsetWidth||360;
+  var CW=W*0.62; // centre width
+  var SW=W*0.28; // side width
+
+  slides.forEach(function(slide,i){
+    var diff=i-cur;
+    if(diff<-1||diff>1){
+      slide.style.opacity='0';slide.style.pointerEvents='none';slide.style.zIndex='0';
+      return;
+    }
+    slide.style.pointerEvents='auto';
+    if(diff===0){
+      slide.style.width=CW+'px';slide.style.height='200px';
+      slide.style.left=(W/2-CW/2)+'px';slide.style.top='10px';
+      slide.style.opacity='1';slide.style.zIndex='3';
+      slide.style.boxShadow='0 4px 24px rgba(0,0,0,.4)';
+    } else if(diff===-1){
+      slide.style.width=SW+'px';slide.style.height='170px';
+      slide.style.left='0px';slide.style.top='25px';
+      slide.style.opacity='0.4';slide.style.zIndex='2';
+      slide.style.boxShadow='none';
+    } else {
+      slide.style.width=SW+'px';slide.style.height='170px';
+      slide.style.left=(W-SW)+'px';slide.style.top='25px';
+      slide.style.opacity='0.4';slide.style.zIndex='2';
+      slide.style.boxShadow='none';
+    }
+  });
+
+  var prev=document.getElementById(cid+'_prev');
+  var next=document.getElementById(cid+'_next');
+  if(prev)prev.style.display=cur>0?'flex':'none';
+  if(next)next.style.display=cur<n-1?'flex':'none';
+}
+
+function carMove(cid,dir){
+  var cont=document.getElementById(cid);if(!cont)return;
+  var slides=cont.querySelectorAll('.car-slide');
+  var n=slides.length;
+  cont._idx=Math.max(0,Math.min(n-1,(cont._idx||0)+dir));
+  renderCarousel(cid);
 }
 
 function goToMap(evId){
@@ -1142,17 +1197,22 @@ function openArtistPanel(artistId){
     html+='</div></div></div></div>';
   }
 
-  // Catalogue
-  if(a.cat&&a.cat.length){
+  // Catalogue carousel
+  if(a.cat&&a.cat.length&&a.cat.some(function(c){return c.imgUrl;})){
+    var imgs=a.cat.filter(function(c){return c.imgUrl;});
+    var cid='carousel_'+a.id.replace(/-/g,'');
     html+='<div class="ap-section"><div class="ap-sec-title">Catalogue</div>';
-    html+='<div class="catalogue-grid">';
-    a.cat.forEach(function(item){
-      var imgContent=item.imgUrl
-        ?'<img src="'+item.imgUrl+'" style="width:100%;height:100%;object-fit:cover"/>'
-        :'<div class="cat-img-ph">🎨</div>';
-      html+='<div class="cat-card"><div class="cat-img">'+imgContent+'</div>';
-      html+='<div class="cat-info"><div class="cat-name">'+item.name+'</div><div class="cat-price">'+item.price+'</div></div></div>';
+    html+='<div id="'+cid+'" style="position:relative;user-select:none">';
+    html+='<div style="display:flex;align-items:center;justify-content:center;gap:12px;height:220px;overflow:hidden;position:relative">';
+    imgs.forEach(function(item,i){
+      html+='<div class="car-slide" data-idx="'+i+'" style="position:absolute;transition:all .35s cubic-bezier(.4,0,.2,1);border-radius:12px;overflow:hidden;cursor:pointer">'+
+        '<img src="'+item.imgUrl+'" style="width:100%;height:100%;object-fit:cover;display:block"/>'+
+      '</div>';
     });
+    html+='</div>';
+    // Arrow buttons
+    html+='<button id="'+cid+'_prev" onclick="carMove(\''+cid+'\',- 1)" style="display:none;position:absolute;left:-14px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;border:1px solid var(--brd2);background:var(--surf);color:var(--txt);font-size:16px;cursor:pointer;z-index:5;align-items:center;justify-content:center">‹</button>';
+    html+='<button id="'+cid+'_next" onclick="carMove(\''+cid+'\',1)" style="'+(imgs.length>1?'display:flex':'display:none')+';position:absolute;right:-14px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;border:1px solid var(--brd2);background:var(--surf);color:var(--txt);font-size:16px;cursor:pointer;z-index:5;align-items:center;justify-content:center">›</button>';
     html+='</div></div>';
   }
 
@@ -1169,6 +1229,9 @@ function openArtistPanel(artistId){
 
   document.getElementById('apInner').innerHTML=html;
   document.getElementById('artistPanel').style.display='flex';
+  // Init carousel if present
+  var cid='carousel_'+artistId.replace(/-/g,'');
+  if(document.getElementById(cid))setTimeout(function(){initCarousel(cid);},50);
 }
 
 function closeArtistPanel(){
@@ -1245,17 +1308,18 @@ function tog(boxId,extraId){
   }
 }
 
-function addCat(){
-  var l=document.getElementById('catList');
-  var d=document.createElement('div');d.className='cat-item';
-  d.innerHTML='<label class="cat-thumb">+ photo<input type="file" accept="image/*" style="display:none" onchange="prevCat(event,this)"/></label>'+
-    '<div class="cat-fields"><input placeholder="Item name"/><input placeholder="Price (e.g. £8)"/></div>';
-  l.appendChild(d);
-}
-
-function prevCat(e,inp){
-  var f=e.target.files[0];if(!f)return;
-  inp.closest('.cat-thumb').innerHTML='<img src="'+URL.createObjectURL(f)+'"/>';
+function addCatImages(e){
+  var files=Array.from(e.target.files);
+  var list=document.getElementById('catList');
+  files.forEach(function(f){
+    var url=URL.createObjectURL(f);
+    var item=document.createElement('div');
+    item.style.cssText='position:relative;aspect-ratio:1;border-radius:var(--rs);overflow:hidden;border:1px solid var(--brd);background:var(--surf2)';
+    item.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover"/>'+
+      '<button onclick="this.parentElement.remove()" style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>';
+    item._file=f;
+    list.appendChild(item);
+  });
 }
 
 function previewPfp(e){
@@ -1716,13 +1780,15 @@ async function submitForm(){
     if(val)socials.push({p:lbl,h:val});
   });
 
-  // Collect catalogue
+  // Collect catalogue images — stored as file references on DOM nodes
+  var catItems=document.querySelectorAll('#catList > div');
   var catalogue=[];
-  document.querySelectorAll('.cat-item').forEach(function(item){
-    var inputs=item.querySelectorAll('.cat-fields input');
-    var n=inputs[0]?inputs[0].value.trim():'';
-    var p=inputs[1]?inputs[1].value.trim():'';
-    if(n)catalogue.push({name:n,price:p});
+  var catFiles=[];
+  catItems.forEach(function(item,i){
+    if(item._file){
+      catFiles.push({idx:i,file:item._file});
+      catalogue.push({imgUrl:null});
+    }
   });
 
   // Collect genres from blurb words? No — just use a simple comma split from a field
@@ -1767,17 +1833,13 @@ async function submitForm(){
   }
 
   // Upload catalogue images
-  for(var ci=0;ci<catalogue.length;ci++){
-    var catInput=document.querySelectorAll('.cat-item')[ci];
-    if(!catInput)continue;
-    var catFile=catInput.querySelector('input[type=file]');
-    if(catFile&&catFile.files&&catFile.files[0]){
-      var cf=catFile.files[0];
-      var catPath='catalogue/'+Date.now()+'-'+ci+'-'+cf.name.replace(/[^a-zA-Z0-9.]/g,'_');
-      var catUp=await db.storage.from('artist-images').upload(catPath,cf,{upsert:true});
-      if(!catUp.error){
-        catalogue[ci].imgUrl=db.storage.from('artist-images').getPublicUrl(catPath).data.publicUrl;
-      }
+  for(var ci=0;ci<catFiles.length;ci++){
+    var cf=catFiles[ci].file;
+    var idx=catFiles[ci].idx;
+    var catPath='catalogue/'+Date.now()+'-'+ci+'-'+cf.name.replace(/[^a-zA-Z0-9.]/g,'_');
+    var catUp=await db.storage.from('artist-images').upload(catPath,cf,{upsert:true});
+    if(!catUp.error&&catalogue[idx]!==undefined){
+      catalogue[idx].imgUrl=db.storage.from('artist-images').getPublicUrl(catPath).data.publicUrl;
     }
   }
 
