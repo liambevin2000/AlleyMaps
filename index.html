@@ -1667,6 +1667,7 @@ function renderDashContent(tab){
           return'<div class="q-item" id="approved_'+a.id+'" data-artist-id="'+a.id+'">'+avHtml+
             '<div class="q-info"><div class="q-name">'+a.n+'</div><div class="q-meta">Table '+a.tbl+(a.g.length?' · '+a.g.join(', '):'')+(a.r?' · '+a.r:'')+'</div></div>'+
             '<div class="q-actions"><span style="font-size:11px;color:var(--grn);font-weight:700">✓ Live</span>'+
+            '<button class="qbtn" data-aid="'+a.id+'" onclick="openEditModal(this.getAttribute(\'data-aid\'))">✏ Edit</button>'+
             '<button class="qbtn no" data-qid="approved_'+a.id+'" onclick="removeArtist(this.getAttribute(\'data-qid\'))">Remove</button>'+
             '</div></div>';
         }).join('')
@@ -2311,14 +2312,37 @@ function copySuccessCode(){
 }
 
 function resetForm(){
+  // Reset all inputs
+  var sel=document.getElementById('formEvSelect');if(sel)sel.value='';
+  var nm=document.getElementById('fName');if(nm)nm.value='';
+  var tbl=document.getElementById('fTable');if(tbl)tbl.value='';
+  var blurb=document.getElementById('fBlurb');if(blurb)blurb.value='';
+  var vp=document.getElementById('verifyPlatform');if(vp)vp.value='';
+  var cv=document.getElementById('codeVal');if(cv)cv.textContent='';
+  var cd=document.getElementById('codeDisplay');if(cd)cd.classList.remove('on');
+  // Clear socials
+  document.querySelectorAll('.soc-field input').forEach(function(i){i.value='';});
+  // Clear catalogue
+  var catList=document.getElementById('catList');if(catList)catList.innerHTML='';
+  // Reset profile pic
+  var pfp=document.getElementById('pfpPreview');
+  if(pfp){pfp.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.4"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Square photo';pfp.style.border='2px dashed var(--brd2)';pfp.style.padding='8px';}
+  // Reset toggles
+  var rt=document.getElementById('rallyT');if(rt&&rt.classList.contains('on')){rt.classList.remove('on');var rx=document.getElementById('rallyX');if(rx)rx.classList.remove('on');}
+  // Reset rally select
+  var rs=document.getElementById('rallySelect');if(rs)rs.value='';
+  var newRN=document.getElementById('newRN');if(newRN)newRN.style.display='none';
+  var newRNi=document.getElementById('newRallyName');if(newRNi)newRNi.value='';
+  // Show form, hide success
   document.getElementById('formOuter').style.display='block';
   document.getElementById('submitBar').style.display='flex';
-  var ss=document.getElementById('successScr');
-  if(ss)ss.classList.remove('on');
+  var ss=document.getElementById('successScr');if(ss)ss.classList.remove('on');
   var btn=document.querySelector('.submit-bar .sbtn.p');
   if(btn){btn.disabled=false;btn.textContent='Submit for approval →';}
   updateFormProgress();
   updateBlurbCount();
+  // Scroll to top
+  var fo=document.getElementById('formOuter');if(fo)fo.scrollTop=0;
 }
 
 // -
@@ -2334,6 +2358,9 @@ async function approveQ(id){
   showToast('Artist approved and live!');
   EVENTS.forEach(function(ev){ev.artists=[];ev.rallies=[];});
   await loadAllArtists();
+  // Auto-position if sharing a table
+  var evAfter=EVENTS.find(function(e){return e.id===dashEvId;});
+  if(evAfter)autoPositionSharedTable(evAfter,artistId);
   buildRallySelect();
   await renderDashContent(curDashTab);
   updateQueueBadge();
@@ -2464,9 +2491,18 @@ renderDashContent=async function(tab){
       el.innerHTML='<div style="font-size:13px;color:var(--mut);padding:14px 0;font-weight:500">No pending submissions for this event.</div>';
       return;
     }
+    var ev=EVENTS.find(function(e){return e.id===dashEvId;})||{artists:[]};
     el.innerHTML='<div style="font-size:12px;color:var(--mut);margin-bottom:16px;font-weight:500">'+pending.length+' submission'+(pending.length>1?'s':'')+' awaiting verification &amp; approval</div>'+
       '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">'+
       pending.map(function(a){
+        // Check if table is shared with an approved artist
+        var tablemates=(ev.artists||[]).filter(function(x){return x.tbl&&a.table_number&&x.tbl.trim().toLowerCase()===a.table_number.trim().toLowerCase();});
+        var sharedHtml=tablemates.length
+          ?'<div style="background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:var(--rs);padding:8px 12px;font-size:11px;color:var(--acc3);font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px">'+
+            '👥 Sharing table with: '+tablemates.map(function(x){return'<strong>'+x.n+'</strong>';}).join(', ')+
+          '</div>'
+          :'';
+
         // Profile pic or initials avatar — clickable if has image
         var avStyle='width:56px;height:56px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;font-family:var(--fd);background:'+(a.bg_color||'#ede7f6')+';color:'+(a.fg_color||'#7c4dff')+';overflow:hidden;border:2px solid var(--brd)'+(a.profile_pic_url?';cursor:zoom-in':'');
         var avContent=a.profile_pic_url
@@ -2523,6 +2559,7 @@ renderDashContent=async function(tab){
           '</div>'+
           // Body
           '<div style="padding:14px;flex:1">'+
+            sharedHtml+
             (a.blurb?'<div style="font-size:12px;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:12px;background:var(--surf2);border-radius:var(--rs);padding:10px 12px;border:1px solid var(--brd)">'+a.blurb+'</div>':'')+
             catHtml+
             socsHtml+
@@ -2530,6 +2567,7 @@ renderDashContent=async function(tab){
           // Footer actions
           '<div style="padding:12px 14px;border-top:1px solid var(--brd);display:flex;gap:8px;align-items:center;background:var(--surf2)">'+
             '<button class="qbtn no" data-qid="qi_'+a.id+'" onclick="rejectQ(this.getAttribute(\'data-qid\'))">✕ Reject</button>'+
+            '<button class="qbtn" data-aid="'+a.id+'" onclick="openEditModal(this.getAttribute(\'data-aid\'))">✏ Edit</button>'+
             '<button class="qbtn ok" style="flex:1;padding:8px" data-qid="qi_'+a.id+'" onclick="approveQ(this.getAttribute(\'data-qid\'))">✓ Approve &amp; publish</button>'+
           '</div>'+
         '</div>';
@@ -2543,6 +2581,113 @@ renderDashContent=async function(tab){
 // -
 // TOAST
 // -
+// ─────────────────────────────────────────
+// EDIT ARTIST MODAL
+// ─────────────────────────────────────────
+async function openEditModal(artistId){
+  // Load from Supabase to get latest data
+  var res=await db.from('artists').select('*').eq('id',artistId);
+  if(res.error||!res.data||!res.data.length){showToast('Could not load artist data');return;}
+  var a=res.data[0];
+
+  var existing=document.getElementById('editModal');if(existing)existing.remove();
+  var modal=document.createElement('div');
+  modal.id='editModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px;backdrop-filter:blur(4px)';
+
+  var socsArr=a.socials||[];
+  var socLabels=['Twitter/X','Instagram','TikTok','BlueSky','Etsy','Website'];
+  var socFields=socLabels.map(function(lbl){
+    var existing=socsArr.find(function(s){return s.p===lbl;})||{h:''};
+    return'<div style="display:flex;align-items:center;gap:8px;border:1px solid var(--brd);border-radius:var(--rs);padding:7px 12px;background:var(--surf3);margin-bottom:6px">'+
+      '<span style="font-size:10px;font-weight:700;color:var(--mut);width:68px;flex-shrink:0">'+lbl+'</span>'+
+      '<input data-platform="'+lbl+'" value="'+((existing.h)||'')+'" placeholder="@handle or URL" style="border:none;padding:0;font-size:12px;outline:none;flex:1;background:transparent;color:var(--txt);font-family:var(--fb)"/>'+
+    '</div>';
+  }).join('');
+
+  modal.innerHTML=
+    '<div style="background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);width:100%;max-width:520px;overflow:hidden">'+
+      '<div style="padding:16px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between">'+
+        '<div style="font-family:var(--fd);font-size:20px;font-weight:900">Edit artist: '+a.name+'</div>'+
+        '<button onclick="document.getElementById(\'editModal\').remove()" style="background:none;border:none;color:var(--mut);font-size:22px;cursor:pointer">×</button>'+
+      '</div>'+
+      '<div style="padding:20px;overflow-y:auto;max-height:70vh;display:flex;flex-direction:column;gap:14px">'+
+        '<div><label style="display:block;font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Artist name</label>'+
+        '<input id="em_name" value="'+a.name+'" style="width:100%;padding:9px 12px;border:1px solid var(--brd);border-radius:var(--rs);font-size:13px;font-family:var(--fb);color:var(--txt);background:var(--surf2);outline:none"/></div>'+
+
+        '<div><label style="display:block;font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Table number</label>'+
+        '<input id="em_table" value="'+(a.table_number||'')+'" style="width:100%;padding:9px 12px;border:1px solid var(--brd);border-radius:var(--rs);font-size:13px;font-family:var(--fb);color:var(--txt);background:var(--surf2);outline:none"/></div>'+
+
+        '<div><label style="display:block;font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Blurb</label>'+
+        '<textarea id="em_blurb" maxlength="200" style="width:100%;padding:9px 12px;border:1px solid var(--brd);border-radius:var(--rs);font-size:13px;font-family:var(--fb);color:var(--txt);background:var(--surf2);outline:none;resize:vertical;min-height:72px;line-height:1.6">'+((a.blurb)||'')+'</textarea></div>'+
+
+        '<div><label style="display:block;font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Rally name (leave blank for none)</label>'+
+        '<input id="em_rally" value="'+(a.rally_name||'')+'" style="width:100%;padding:9px 12px;border:1px solid var(--brd);border-radius:var(--rs);font-size:13px;font-family:var(--fb);color:var(--txt);background:var(--surf2);outline:none"/></div>'+
+
+        '<div><label style="display:block;font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Social media</label>'+
+        '<div id="em_socs">'+socFields+'</div></div>'+
+
+        '<div><label style="display:block;font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Verify code (read-only)</label>'+
+        '<input value="'+(a.verify_code||'')+ '" readonly style="width:100%;padding:9px 12px;border:1px solid var(--brd);border-radius:var(--rs);font-size:13px;font-family:var(--fd);color:var(--acc);background:var(--surf3);outline:none;letter-spacing:.08em"/></div>'+
+      '</div>'+
+      '<div style="padding:14px 20px;border-top:1px solid var(--brd);display:flex;gap:10px;background:var(--surf2)">'+
+        '<button onclick="document.getElementById(\'editModal\').remove()" style="flex:1;padding:9px;border-radius:var(--rs);border:1px solid var(--brd2);background:transparent;font-size:12px;font-weight:700;cursor:pointer;color:var(--mut);font-family:var(--fb)">Cancel</button>'+
+        '<button data-aid="'+a.id+'" onclick="saveEditModal(this.getAttribute(\'data-aid\'))" style="flex:2;padding:9px;border-radius:var(--rs);border:none;background:linear-gradient(135deg,var(--acc),var(--acc2));font-size:13px;font-weight:700;cursor:pointer;color:#fff;font-family:var(--fb)">Save changes</button>'+
+      '</div>'+
+    '</div>';
+
+  document.body.appendChild(modal);
+}
+
+async function saveEditModal(artistId){
+  var name=document.getElementById('em_name').value.trim();
+  var table=document.getElementById('em_table').value.trim();
+  var blurb=document.getElementById('em_blurb').value.trim();
+  var rally=document.getElementById('em_rally').value.trim();
+
+  var socials=[];
+  document.querySelectorAll('#em_socs input[data-platform]').forEach(function(inp){
+    var val=inp.value.trim();
+    if(val)socials.push({p:inp.getAttribute('data-platform'),h:val});
+  });
+
+  var initials=name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+
+  var res=await db.from('artists').update({
+    name:name, initials:initials, table_number:table,
+    blurb:blurb, rally_name:rally||null, socials:socials
+  }).eq('id',artistId);
+
+  if(res&&res.error){showToast('Error: '+res.error.message);return;}
+  showToast('Artist updated!');
+  document.getElementById('editModal').remove();
+  EVENTS.forEach(function(ev){ev.artists=[];ev.rallies=[];});
+  await loadAllArtists();
+  renderDashContent(curDashTab);
+  if(pubEvId===dashEvId){renderArtistList();renderPubPins();}
+}
+
+// ─────────────────────────────────────────
+// AUTO-POSITION SHARED TABLE PINS
+// ─────────────────────────────────────────
+function autoPositionSharedTable(ev,newArtistId){
+  if(!ev||!ev.mapUrl)return;
+  var newA=ev.artists.find(function(a){return a.id===newArtistId;});
+  if(!newA||!newA.tbl)return;
+  // Find tablemates that have a position
+  var tablemates=ev.artists.filter(function(a){
+    return a.id!==newArtistId&&a.tbl&&a.tbl.trim().toLowerCase()===newA.tbl.trim().toLowerCase()&&a.x&&a.y;
+  });
+  if(!tablemates.length)return;
+  // Place next to the first tablemate — offset by 40px to the right
+  var ref=tablemates[0];
+  var newX=ref.x+44;
+  var newY=ref.y;
+  newA.x=newX;newA.y=newY;
+  savePinPosition(newArtistId,newX,newY);
+  showToast('Pin auto-placed next to '+ref.n);
+}
+
 function showToast(msg){
   var t=document.getElementById('toastEl');
   t.textContent=msg;t.classList.add('on');
