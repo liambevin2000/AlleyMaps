@@ -1740,12 +1740,16 @@ async function submitForm(){
   // Upload profile pic
   var pfpUrl=null;
   var pfpFile=document.querySelector('#pfpPreview').closest('label').querySelector('input[type=file]');
+  console.log('pfp input found:',!!pfpFile);
   if(pfpFile&&pfpFile.files&&pfpFile.files[0]){
     var f=pfpFile.files[0];
+    console.log('Uploading pfp:',f.name);
     var pfpPath='profiles/'+Date.now()+'-'+f.name.replace(/[^a-zA-Z0-9.]/g,'_');
     var pfpUp=await db.storage.from('artist-images').upload(pfpPath,f,{upsert:true});
+    console.log('pfp upload result:',pfpUp);
     if(!pfpUp.error){
       pfpUrl=db.storage.from('artist-images').getPublicUrl(pfpPath).data.publicUrl;
+      console.log('pfp url:',pfpUrl);
     }
   }
 
