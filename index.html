@@ -578,7 +578,7 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
         <div class="fsec">
           <div class="fsec-title">Your event</div>
           <div class="field"><label>Which convention are you attending?</label>
-            <select id="formEvSelect" onchange="updateFormProgress()"><option value="">— Select your event —</option></select>
+            <select id="formEvSelect" onchange="updateFormProgress();buildRallySelect(this.value)"><option value="">— Select your event —</option></select>
           </div>
         </div>
 
@@ -677,9 +677,15 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
     </div>
     <div class="success-scr" id="successScr">
       <div class="success-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--grn)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
-      <div style="font-family:var(--fd);font-size:36px;font-weight:900;letter-spacing:-.01em">Submission received!</div>
-      <div style="font-size:14px;color:var(--mut);max-width:340px;text-align:center;line-height:1.7;font-weight:500">Your listing is under review. Once we've verified your code and approved your submission, your pin will go live on the map.</div>
-      <button class="sbtn" style="margin-top:8px" onclick="resetForm()">Submit another</button>
+      <div style="font-family:var(--fd);font-size:36px;font-weight:900;letter-spacing:-.01em">You're on the list!</div>
+      <div style="font-size:14px;color:var(--mut);max-width:360px;text-align:center;line-height:1.7;font-weight:500">Your submission is under review. Before we can approve you, you need to send us your verification code.</div>
+      <div style="background:var(--surf);border:1px solid var(--brd2);border-radius:var(--r);padding:18px 22px;text-align:center;max-width:320px;width:100%">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:8px">Your verification code — keep this safe!</div>
+        <div id="successCode" style="font-family:var(--fd);font-size:36px;font-weight:900;letter-spacing:.12em;color:var(--acc);margin-bottom:10px">—</div>
+        <button onclick="copySuccessCode()" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--acc);background:rgba(192,132,252,.1);font-size:12px;font-weight:700;cursor:pointer;color:var(--acc);font-family:var(--fb);margin-bottom:12px">📋 Copy code</button>
+        <div id="successPlatform" style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.6;font-weight:500"></div>
+      </div>
+      <button class="sbtn" style="margin-top:8px" onclick="resetForm()">Submit another artist</button>
     </div>
     <div class="submit-bar" id="submitBar">
       <button class="sbtn p" onclick="submitForm()">Submit for approval →</button>
@@ -1383,7 +1389,17 @@ function openArtistPanel(artistId){
   if(a.s&&a.s.length){
     html+='<div class="ap-section"><div class="ap-sec-title">Find them on</div><div class="soc-grid">';
     a.s.forEach(function(soc){
-      html+='<div class="soc-btn"><div class="soc-icon">🔗</div><div><div class="soc-name">'+soc.p+'</div><div class="soc-handle">'+soc.h+'</div></div></div>';
+      var handle=soc.h||'';
+      var url='';
+      var lp=(soc.p||'').toLowerCase();
+      if(lp.includes('instagram'))url='https://instagram.com/'+handle.replace('@','');
+      else if(lp.includes('twitter')||lp.includes('x'))url='https://x.com/'+handle.replace('@','');
+      else if(lp.includes('tiktok'))url='https://tiktok.com/@'+handle.replace('@','');
+      else if(lp.includes('bluesky'))url='https://bsky.app/profile/'+handle.replace('@','');
+      else if(lp.includes('etsy'))url=handle.startsWith('http')?handle:'https://etsy.com/shop/'+handle;
+      else if(handle.startsWith('http'))url=handle;
+      var clickAttr=url?'onclick="window.open(\''+url+'\',\'_blank\')"':'onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+handle+'\');showToast(\'Copied!\')"';
+      html+='<div class="soc-btn" '+clickAttr+'><div class="soc-icon">🔗</div><div><div class="soc-name">'+soc.p+'</div><div class="soc-handle">'+handle+'</div></div></div>';
     });
     html+='</div></div>';
   }
@@ -1489,19 +1505,19 @@ function buildFormEvSelect(){
     opt.value=ev.id;opt.textContent=ev.name+' · '+ev.dateLabel;
     sel.appendChild(opt);
   });
-  // Populate rally dropdown with known rallies from all events
-  buildRallySelect();
+  // Populate rally dropdown — empty until event is selected
+  buildRallySelect(null);
 }
 
-function buildRallySelect(){
+function buildRallySelect(evId){
   var sel=document.getElementById('rallySelect');
   if(!sel)return;
-  // Gather all unique rally names across all events
+  var ev=evId?EVENTS.find(function(e){return e.id===evId;}):null;
   var known={};
-  EVENTS.forEach(function(ev){
+  if(ev){
     (ev.rallies||[]).forEach(function(r){known[r]=true;});
     (ev.artists||[]).forEach(function(a){if(a.r)known[a.r]=true;});
-  });
+  }
   sel.innerHTML='<option value="">— Select existing or create new —</option>';
   Object.keys(known).sort().forEach(function(r){
     var opt=document.createElement('option');
@@ -2033,22 +2049,67 @@ async function submitForm(){
   var blurb=document.getElementById('fBlurb').value.trim();
   var platform=document.getElementById('verifyPlatform').value;
   var code=document.getElementById('codeVal').textContent.trim();
+  var pfpFile=document.querySelector('#pfpPreview').closest('label').querySelector('input[type=file]');
+  var hasPfp=pfpFile&&pfpFile.files&&pfpFile.files[0];
 
-  // Validate — collect all missing fields
+  // Validate
   var missing=[];
   if(!evId)missing.push('Event selection');
   if(!name)missing.push('Artist/booth name');
   if(!table)missing.push('Table number');
   if(!blurb)missing.push('Blurb');
+  if(!hasPfp)missing.push('Profile photo (required)');
   if(!platform)missing.push('Verification method');
   if(!code)missing.push('Verification code (click Generate)');
 
-  if(missing.length){
-    showFormValidationError(missing);
-    return;
+  if(missing.length){showFormValidationError(missing);return;}
+
+  // Check if table number is already taken by an approved artist
+  var ev=EVENTS.find(function(e){return e.id===evId;});
+  if(ev){
+    var sameTable=ev.artists.filter(function(a){return a.tbl&&a.tbl.trim().toLowerCase()===table.trim().toLowerCase();});
+    if(sameTable.length>0){
+      var sharing=await new Promise(function(res){
+        var modal=document.createElement('div');
+        modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
+        modal.innerHTML='<div style="background:var(--surf);border:1px solid var(--brd2);border-radius:var(--r);padding:24px;max-width:380px;width:90%">'+
+          '<div style="font-size:22px;margin-bottom:8px">🤝</div>'+
+          '<div style="font-family:var(--fd);font-size:20px;font-weight:900;margin-bottom:10px">Table already registered!</div>'+
+          '<div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.6;font-weight:500;margin-bottom:18px">Table <strong style="color:var(--txt)">'+table+'</strong> is already registered by <strong style="color:var(--txt)">'+sameTable.map(function(a){return a.n;}).join(', ')+'</strong>.<br/><br/>Are you sharing this table with them?</div>'+
+          '<div style="display:flex;gap:10px">'+
+            '<button id="tblNo" style="flex:1;padding:10px;border-radius:var(--rs);border:1px solid var(--brd2);background:transparent;font-size:12px;font-weight:700;cursor:pointer;color:var(--mut);font-family:var(--fb)">No — different table</button>'+
+            '<button id="tblYes" style="flex:1;padding:10px;border-radius:var(--rs);border:none;background:linear-gradient(135deg,var(--acc),var(--acc2));font-size:12px;font-weight:700;cursor:pointer;color:#fff;font-family:var(--fb)">Yes, sharing!</button>'+
+          '</div></div>';
+        document.body.appendChild(modal);
+        document.getElementById('tblYes').onclick=function(){modal.remove();res(true);};
+        document.getElementById('tblNo').onclick=function(){modal.remove();res(false);};
+      });
+      if(!sharing)return; // let them fix the table number
+    }
   }
 
-  // Show preview before final submit
+  // Check if catalogue is empty
+  var catItems=Array.from(document.querySelectorAll('#catList > div')).filter(function(d){return d._file;});
+  if(!catItems.length){
+    var proceed=await new Promise(function(res){
+      var modal=document.createElement('div');
+      modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
+      modal.innerHTML='<div style="background:var(--surf);border:1px solid var(--brd2);border-radius:var(--r);padding:24px;max-width:380px;width:90%">'+
+        '<div style="font-size:36px;margin-bottom:10px">🎨</div>'+
+        '<div style="font-family:var(--fd);font-size:20px;font-weight:900;margin-bottom:10px">No catalogue images?</div>'+
+        '<div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.6;font-weight:500;margin-bottom:18px">Attendees absolutely love seeing your work before the con — it\'s one of the best ways to get people excited to visit your table! Are you sure you want to submit without any catalogue images?</div>'+
+        '<div style="display:flex;gap:10px">'+
+          '<button id="catNo" style="flex:1;padding:10px;border-radius:var(--rs);border:none;background:linear-gradient(135deg,var(--acc),var(--acc2));font-size:12px;font-weight:700;cursor:pointer;color:#fff;font-family:var(--fb)">← Add some images!</button>'+
+          '<button id="catYes" style="flex:1;padding:10px;border-radius:var(--rs);border:1px solid var(--brd2);background:transparent;font-size:12px;font-weight:700;cursor:pointer;color:var(--mut);font-family:var(--fb)">Submit without images</button>'+
+        '</div></div>';
+      document.body.appendChild(modal);
+      document.getElementById('catYes').onclick=function(){modal.remove();res(true);};
+      document.getElementById('catNo').onclick=function(){modal.remove();res(false);};
+    });
+    if(!proceed)return;
+  }
+
+  // Show preview
   showSubmitPreview(evId,name,table,blurb,platform,code);
 }
 
@@ -2093,9 +2154,9 @@ function showSubmitPreview(evId,name,table,blurb,platform,code){
     return d.querySelector('img')?d.querySelector('img').src:null;
   }).filter(Boolean);
 
-  var col=['#ede7f6','#e0f7f4','#fff8e1','#fce4ec','#e8f5e9','#fbe9e7','#e3f2fd','#f3e5f5'];
-  var fgCol=['#7c4dff','#00897b','#f57f17','#c2185b','#388e3c','#bf360c','#1565c0','#6a1b9a'];
-  var ci=name.charCodeAt(0)%col.length;
+  var cols=['#ede7f6','#e0f7f4','#fff8e1','#fce4ec','#e8f5e9','#fbe9e7','#e3f2fd','#f3e5f5'];
+  var fgCols=['#7c4dff','#00897b','#f57f17','#c2185b','#388e3c','#bf360c','#1565c0','#6a1b9a'];
+  var ci=name.charCodeAt(0)%cols.length;
 
   var avHtml=pfpSrc
     ?'<img src="'+pfpSrc+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>'
@@ -2106,38 +2167,44 @@ function showSubmitPreview(evId,name,table,blurb,platform,code){
 
   var modal=document.createElement('div');
   modal.id='submitPreview';
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);overflow-y:auto;padding:20px';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);overflow-y:auto;padding:20px';
   modal.innerHTML=
-    '<div style="background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);width:100%;max-width:480px;overflow:hidden;display:flex;flex-direction:column">'+
-      // Header - mimics artist panel
-      '<div style="padding:20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:14px;background:var(--surf2)">'+
-        '<div style="width:56px;height:56px;border-radius:50%;background:'+col[ci]+';color:'+fgCol[ci]+';display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;flex-shrink:0;overflow:hidden;border:2px solid var(--brd);font-family:var(--fd)">'+avHtml+'</div>'+
-        '<div><div style="font-family:var(--fd);font-size:22px;font-weight:900;letter-spacing:-.01em">'+name+'</div>'+
-        '<div style="font-size:12px;color:var(--mut);margin-top:2px;font-weight:500">Table '+table+(rallyName?' · 🎟 '+rallyName:'')+'</div></div>'+
+    '<div style="background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);width:100%;max-width:460px;overflow:hidden;display:flex;flex-direction:column">'+
+      // Warning header
+      '<div style="background:rgba(251,191,36,.1);border-bottom:1px solid rgba(251,191,36,.25);padding:12px 18px;display:flex;align-items:center;gap:10px">'+
+        '<span style="font-size:18px">⚠️</span>'+
+        '<div style="font-size:12px;font-weight:600;color:var(--amb);line-height:1.5">This is your final check. <strong>You cannot edit your listing once submitted.</strong> Make sure everything below is correct.</div>'+
       '</div>'+
-      '<div style="padding:18px;overflow-y:auto;max-height:60vh">'+
-        // Blurb
-        (blurb?'<div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.7;background:var(--surf2);border-radius:var(--rs);padding:12px 14px;border:1px solid var(--brd);margin-bottom:14px">'+blurb+'</div>':'')+
-        // Catalogue preview
-        (catImgs.length?'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:8px">Catalogue ('+catImgs.length+' image'+(catImgs.length>1?'s':'')+')</div>'+
-          '<div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto">'+
-          catImgs.map(function(src){return'<div style="flex:0 0 80px;height:80px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--brd);background:var(--surf2)"><img src="'+src+'" style="width:100%;height:100%;object-fit:contain"/></div>';}).join('')+
-          '</div>':'')+
-        // Socials
-        (socials.length?'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:8px">Socials</div>'+
-          '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px">'+
-          socials.map(function(s){return'<span style="padding:3px 10px;border-radius:10px;background:var(--surf2);border:1px solid var(--brd);font-size:11px;color:var(--mut);font-weight:600">'+s.p+': '+s.h+'</span>';}).join('')+
-          '</div>':'')+
-        // Verify info
-        '<div style="background:rgba(192,132,252,.08);border:1px solid rgba(192,132,252,.2);border-radius:var(--rs);padding:12px 14px;font-size:12px;color:var(--mut);font-weight:500">'+
-          '🔐 Verifying via <strong style="color:var(--txt)">'+platform+'</strong> · Code: <strong style="color:var(--acc);font-family:var(--fd);letter-spacing:.06em">'+code+'</strong>'+
+      // Profile preview label
+      '<div style="padding:14px 18px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mut)">How your listing will appear</div>'+
+      // Artist panel preview
+      '<div style="margin:0 18px;border:1px solid var(--brd);border-radius:var(--rs);overflow:hidden">'+
+        '<div style="padding:16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:12px;background:var(--surf2)">'+
+          '<div style="width:50px;height:50px;border-radius:50%;background:'+cols[ci]+';color:'+fgCols[ci]+';display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;flex-shrink:0;overflow:hidden;border:2px solid var(--brd);font-family:var(--fd)">'+avHtml+'</div>'+
+          '<div><div style="font-family:var(--fd);font-size:20px;font-weight:900;letter-spacing:-.01em">'+name+'</div>'+
+          '<div style="font-size:11px;color:var(--mut);margin-top:2px;font-weight:500">Table '+table+(rallyName?' · 🎟 '+rallyName:'')+'</div></div>'+
+        '</div>'+
+        '<div style="padding:14px">'+
+          (blurb?'<div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.6;background:var(--surf2);border-radius:var(--rs);padding:10px 12px;border:1px solid var(--brd);margin-bottom:10px">'+blurb+'</div>':'')+
+          (catImgs.length?'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);margin-bottom:6px">Catalogue ('+catImgs.length+' image'+(catImgs.length>1?'s':'')+')</div>'+
+            '<div style="display:flex;gap:5px;overflow-x:auto;margin-bottom:10px">'+
+            catImgs.map(function(src){return'<div style="flex:0 0 70px;height:70px;border-radius:6px;overflow:hidden;border:1px solid var(--brd);background:var(--surf2)"><img src="'+src+'" style="width:100%;height:100%;object-fit:contain"/></div>';}).join('')+
+            '</div>':'')+
+          (socials.length?'<div style="display:flex;gap:4px;flex-wrap:wrap">'+
+            socials.map(function(s){return'<span style="padding:2px 8px;border-radius:10px;background:var(--surf2);border:1px solid var(--brd);font-size:10px;color:var(--mut);font-weight:600">'+s.p+': '+s.h+'</span>';}).join('')+
+            '</div>':'')+
         '</div>'+
       '</div>'+
-      '<div style="padding:14px 18px;border-top:1px solid var(--brd);display:flex;gap:10px;background:var(--surf2)">'+
-        '<button onclick="document.getElementById(\'submitPreview\').remove()" style="flex:1;padding:10px;border-radius:var(--rs);border:1px solid var(--brd2);background:transparent;font-size:13px;font-weight:700;cursor:pointer;color:var(--mut);font-family:var(--fb)">← Edit</button>'+
+      // Verify section — clearly separated
+      '<div style="margin:12px 18px;padding:12px 14px;background:var(--surf2);border:1px solid var(--brd);border-radius:var(--rs)">'+
+        '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:6px">Verification — not shown publicly</div>'+
+        '<div style="font-size:12px;color:rgba(255,255,255,.6);font-weight:500">Via <strong style="color:var(--txt)">'+platform+'</strong> · Send code <strong style="color:var(--acc);font-family:var(--fd);letter-spacing:.06em;font-size:14px">'+code+'</strong> to us before we can approve you.</div>'+
+      '</div>'+
+      // Actions
+      '<div style="padding:14px 18px 18px;display:flex;gap:10px">'+
+        '<button onclick="document.getElementById(\'submitPreview\').remove()" style="flex:1;padding:10px;border-radius:var(--rs);border:1px solid var(--brd2);background:transparent;font-size:12px;font-weight:700;cursor:pointer;color:var(--mut);font-family:var(--fb)">← Edit</button>'+
         '<button onclick="document.getElementById(\'submitPreview\').remove();doActualSubmit()" style="flex:2;padding:10px;border-radius:var(--rs);border:none;background:linear-gradient(135deg,var(--acc),var(--acc2));font-size:13px;font-weight:700;cursor:pointer;color:#fff;font-family:var(--fb)">Looks good — submit! →</button>'+
       '</div>'+
-      '<div style="padding:6px 18px 12px;text-align:center;font-size:10px;color:var(--mut);font-weight:500">This is exactly how your listing will appear to attendees</div>'+
     '</div>';
   document.body.appendChild(modal);
 }
@@ -2220,7 +2287,27 @@ async function doActualSubmit(){
   document.getElementById('formOuter').style.display='none';
   document.getElementById('submitBar').style.display='none';
   var ss=document.getElementById('successScr');
-  if(ss)ss.classList.add('on');
+  if(ss){
+    ss.classList.add('on');
+    var sc=document.getElementById('successCode');
+    if(sc)sc.textContent=code;
+    var sp=document.getElementById('successPlatform');
+    var instrMap={
+      'Instagram DM':'Send this code to us via Instagram DM @alleymap',
+      'Twitter/X DM':'Send this code to us via Twitter/X DM @alleymap',
+      'TikTok comment':'Comment this code on our latest TikTok @alleymap',
+      'Email':'Email this code to verify@alleymap.co'
+    };
+    if(sp)sp.textContent=instrMap[platform]||'Send this code to us via '+platform+' so we can verify and approve your listing.';
+  }
+}
+
+function copySuccessCode(){
+  var el=document.getElementById('successCode');
+  if(!el)return;
+  var code=el.textContent;
+  if(navigator.clipboard)navigator.clipboard.writeText(code);
+  showToast('Code copied: '+code);
 }
 
 function resetForm(){
@@ -2240,20 +2327,30 @@ function resetForm(){
 async function approveQ(id){
   var e=document.getElementById(id);if(!e)return;
   var artistId=e.getAttribute('data-artist-id');
-  if(artistId){
-    var res=await db.from('artists').update({status:'approved'}).eq('id',artistId);
-    if(res.error){showToast('Error: '+res.error.message);return;}
-    // Reload artists into EVENTS
-    EVENTS.forEach(function(ev){ev.artists=[];ev.rallies=[];});
-    await loadAllArtists();
-    renderDashContent(curDashTab);
-    if(pubEvId>=0)renderArtistList();
-    if(pubEvId>=0)renderPubPins();
-  }
-  e.style.opacity='.4';e.style.pointerEvents='none';
-  e.querySelector('.q-actions').innerHTML='<span style="font-size:11px;color:var(--grn);font-weight:700">✓ Approved — live</span>';
+  if(!artistId)return;
+  e.style.opacity='.5';e.style.pointerEvents='none';
+  var res=await db.from('artists').update({status:'approved'}).eq('id',artistId);
+  if(res&&res.error){showToast('Error: '+res.error.message);e.style.opacity='1';e.style.pointerEvents='auto';return;}
   showToast('Artist approved and live!');
+  EVENTS.forEach(function(ev){ev.artists=[];ev.rallies=[];});
+  await loadAllArtists();
+  buildRallySelect();
+  await renderDashContent(curDashTab);
   updateQueueBadge();
+  if(pubEvId===dashEvId){renderArtistList();renderPubPins();}
+}
+
+async function rejectQ(id){
+  var e=document.getElementById(id);if(!e)return;
+  var artistId=e.getAttribute('data-artist-id');
+  if(!artistId)return;
+  e.style.opacity='.5';e.style.pointerEvents='none';
+  var res=await db.from('artists').update({status:'rejected'}).eq('id',artistId);
+  if(res&&res.error){showToast('Error: '+res.error.message);e.style.opacity='1';e.style.pointerEvents='auto';return;}
+  showToast('Submission rejected');
+  updateQueueBadge();
+  // Remove the card from the DOM directly
+  e.remove();
 }
 
 async function removeArtist(qid){
