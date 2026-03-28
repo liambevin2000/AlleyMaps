@@ -1405,13 +1405,13 @@ function renderDashContent(tab){
               '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'+
               '<div style="font-size:12px;font-weight:600">Click to upload floor plan</div>'+
               '<div style="font-size:10px;opacity:.6">PNG or JPG</div>'+
-              '<input type="file" accept="image/*" style="display:none" onchange="dashMapLoad(event,'+ev.id+')"/>'+
+              '<input type="file" accept="image/*" style="display:none" onchange="dashMapLoad(event,\''+ev.id+'\')"/>'+
             '</label>')+
         '<div style="display:flex;gap:7px;align-items:center;flex-shrink:0">'+
           '<div style="font-size:10px;color:var(--mut);font-weight:600;white-space:nowrap">Submission link:</div>'+
           '<div class="link-val">alleymap.co/submit/'+ev.name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'</div>'+
           '<button class="qbtn" onclick="showToast(\'Link copied!\')">Copy</button>'+
-          (ev.mapUrl?'<label class="qbtn" style="cursor:pointer">Change<input type="file" accept="image/*" style="display:none" onchange="dashMapLoad(event,'+ev.id+')"/></label>':'')+
+          (ev.mapUrl?'<label class="qbtn" style="cursor:pointer">Change<input type="file" accept="image/*" style="display:none" onchange="dashMapLoad(event,\''+ev.id+'\')"/></label>':'')+
         '</div>'+
       '</div>'+
       '<div style="display:flex;flex-direction:column;overflow:hidden">'+
