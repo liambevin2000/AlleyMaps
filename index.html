@@ -1660,7 +1660,15 @@ function renderDashContent(tab){
       '<div class="stat"><div class="stat-n">'+ev.artists.filter(function(a){return!!a.r;}).length+'</div><div class="stat-l">In rally</div></div>'+
       '</div><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:10px">Approved artists</div>'+
       (ev.artists.length
-        ?ev.artists.map(function(a){
+        ?ev.artists.slice().sort(function(a,b){
+            // Sort table numbers naturally: numbers first, then alphanumeric
+            var ta=(a.tbl||'').trim();
+            var tb=(b.tbl||'').trim();
+            // Try numeric comparison first
+            var na=parseFloat(ta),nb=parseFloat(tb);
+            if(!isNaN(na)&&!isNaN(nb))return na-nb;
+            return ta.localeCompare(tb,undefined,{numeric:true,sensitivity:'base'});
+          }).map(function(a){
           var avHtml=a.pfp
             ?'<div class="q-av" style="background:'+a.bg+';color:'+a.fg+';overflow:hidden"><img src="'+a.pfp+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/></div>'
             :'<div class="q-av" style="background:'+a.bg+';color:'+a.fg+'">'+a.i+'</div>';
