@@ -1511,24 +1511,16 @@ var SUPA_KEY=['eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
   'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95ZGxtcHd1amF6Z3RqeWN0Z21tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NDU0NDksImV4cCI6MjA5MDIyMTQ0OX0',
   'XGRLxbVdijOHqBVT3ymNQ4iH2pNngwcrDWPXlraIgow'].join('.');
 
-// Simple REST wrapper that mimics the Supabase JS client interface
+// Simple REST wrapper
 var db={
   from:function(table){
-    var _table=table;
-    var _filters=[];
-    var _select='*';
-    var _order=null;
-    var _countOnly=false;
-    var obj={
-      select:function(cols,opts){
-        _select=cols||'*';
-        if(opts&&opts.head)_countOnly=true;
-        return obj;
-      },
-      eq:function(col,val){_filters.push(col+'=eq.'+encodeURIComponent(val));return obj;},
-      order:function(col){_order=col;return obj;},
+    var _filters=[],_select='*',_order=null,_countOnly=false;
+    var q={
+      select:function(c,o){_select=c||'*';if(o&&o.head)_countOnly=true;return q;},
+      eq:function(c,v){_filters.push(c+'=eq.'+encodeURIComponent(v));return q;},
+      order:function(c){_order=c;return q;},
       insert:async function(data){
-        var res=await fetch(SUPA_URL+'/rest/v1/'+_table,{
+        var res=await fetch(SUPA_URL+'/rest/v1/'+table,{
           method:'POST',
           headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=minimal'},
           body:JSON.stringify(data)
@@ -1536,53 +1528,45 @@ var db={
         if(!res.ok){var e=await res.text();return{error:{message:e}};}
         return{data:null,error:null};
       },
-      update:async function(data){
-        var url=SUPA_URL+'/rest/v1/'+_table+(_filters.length?'?'+_filters.join('&'):'');
-        var res=await fetch(url,{
-          method:'PATCH',
-          headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=minimal'},
-          body:JSON.stringify(data)
-        });
-        if(!res.ok){var e=await res.text();return{error:{message:e}};}
-        return{data:null,error:null};
+      update:function(data){
+        // Returns a new chainable that executes on await
+        var _f2=[].concat(_filters);
+        var u={
+          eq:function(c,v){_f2.push(c+'=eq.'+encodeURIComponent(v));return u;},
+          then:async function(resolve,reject){
+            try{
+              var qs=_f2.length?'?'+_f2.join('&'):'';
+              var res=await fetch(SUPA_URL+'/rest/v1/'+table+qs,{
+                method:'PATCH',
+                headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=minimal'},
+                body:JSON.stringify(data)
+              });
+              if(!res.ok){var e=await res.text();resolve({error:{message:e}});}
+              else resolve({data:null,error:null});
+            }catch(err){reject(err);}
+          }
+        };
+        return u;
       },
-      then:undefined
-    };
-    // Make it awaitable for select
-    obj[Symbol.iterator]=undefined;
-    var origObj=obj;
-    var execSelect=async function(){
-      var params=[_select!=='*'?'select='+_select:'select=*'];
-      if(_filters.length)params=params.concat(_filters);
-      if(_order)params.push('order='+_order);
-      var url=SUPA_URL+'/rest/v1/'+_table+'?'+params.join('&');
-      var headers={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
-      if(_countOnly)headers['Prefer']='count=exact';
-      var res=await fetch(url,{headers:headers});
-      if(!res.ok){var e=await res.text();return{data:null,error:{message:e},count:0};}
-      if(_countOnly){
-        var cr=res.headers.get('content-range');
-        var count=cr?parseInt(cr.split('/')[1])||0:0;
-        return{data:null,error:null,count:count};
+      then:async function(resolve,reject){
+        try{
+          var params=['select='+_select];
+          if(_filters.length)params=params.concat(_filters);
+          if(_order)params.push('order='+_order);
+          var headers={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
+          if(_countOnly)headers['Prefer']='count=exact';
+          var res=await fetch(SUPA_URL+'/rest/v1/'+table+'?'+params.join('&'),{headers:headers});
+          if(!res.ok){var e=await res.text();resolve({data:null,error:{message:e},count:0});return;}
+          if(_countOnly){
+            var cr=res.headers.get('content-range');
+            resolve({data:null,error:null,count:cr?parseInt(cr.split('/')[1])||0:0});return;
+          }
+          var json=await res.json();
+          resolve({data:json,error:null,count:json.length});
+        }catch(err){reject(err);}
       }
-      var json=await res.json();
-      return{data:json,error:null,count:json.length};
     };
-    // Patch in async exec on the object
-    obj._exec=execSelect;
-    // Return a proxy-like object that resolves when awaited
-    var thenable={
-      select:obj.select,eq:obj.eq,order:obj.order,insert:obj.insert,update:obj.update,
-      _exec:execSelect,
-      then:function(resolve,reject){return execSelect().then(resolve,reject);}
-    };
-    // Re-wire methods to return thenable
-    thenable.select=function(c,o){_select=c||'*';if(o&&o.head)_countOnly=true;return thenable;};
-    thenable.eq=function(c,v){_filters.push(c+'=eq.'+encodeURIComponent(v));return thenable;};
-    thenable.order=function(c){_order=c;return thenable;};
-    thenable.insert=obj.insert;
-    thenable.update=obj.update;
-    return thenable;
+    return q;
   },
   storage:{
     from:function(bucket){
