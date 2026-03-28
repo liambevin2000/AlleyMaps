@@ -539,84 +539,123 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
 
   <!-- ARTIST FORM -->
   <div class="appview" id="screen-form" style="height:calc(100vh - 52px)">
+
+    <!-- Warning popup -->
+    <div id="formWarning" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+      <div style="background:var(--surf);border:1px solid var(--brd2);border-radius:var(--r);padding:28px;max-width:420px;width:90%;margin:0 auto">
+        <div style="font-size:24px;margin-bottom:10px">📋</div>
+        <div style="font-family:var(--fd);font-size:22px;font-weight:900;margin-bottom:10px;letter-spacing:-.01em">Before you start</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.7;font-weight:500;margin-bottom:20px">
+          Please fill in <strong style="color:var(--txt)">every section carefully</strong> — once submitted, you cannot come back to edit your listing. Your submission goes to the organiser for review and will go live once approved.<br/><br/>
+          Make sure your <strong style="color:var(--txt)">verification code</strong> is sent to us before we can approve you.
+        </div>
+        <div style="display:flex;gap:10px">
+          <button onclick="showLanding()" style="flex:1;padding:10px;border-radius:var(--rs);border:1px solid var(--brd2);background:transparent;font-size:13px;font-weight:700;cursor:pointer;color:var(--mut);font-family:var(--fb)">Go back</button>
+          <button onclick="dismissFormWarning()" style="flex:2;padding:10px;border-radius:var(--rs);border:none;background:linear-gradient(135deg,var(--acc),var(--acc2));font-size:13px;font-weight:700;cursor:pointer;color:#fff;font-family:var(--fb)">Got it — start my submission</button>
+        </div>
+      </div>
+    </div>
+
     <div class="form-outer" id="formOuter">
       <div class="form-wrap">
+
+        <!-- Progress bar -->
+        <div style="position:sticky;top:0;background:var(--bg);padding:14px 0 10px;margin-bottom:8px;z-index:10;border-bottom:1px solid var(--brd)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:11px;font-weight:700;color:var(--mut)">Registration progress</span>
+            <span id="formProgress" style="font-size:11px;font-weight:700;color:var(--acc)">0%</span>
+          </div>
+          <div style="height:4px;background:var(--surf3);border-radius:4px;overflow:hidden">
+            <div id="formProgressBar" style="height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:4px;width:0%;transition:width .3s"></div>
+          </div>
+        </div>
+
         <div class="form-hero">
           <div class="form-hero-title">Get on the map.</div>
-          <div class="form-hero-sub">Register your table for an upcoming convention. Your listing goes live once approved.</div>
+          <div class="form-hero-sub">Register your table for an upcoming convention. Your listing goes live once approved by the organiser.</div>
         </div>
+
         <div class="fsec">
           <div class="fsec-title">Your event</div>
           <div class="field"><label>Which convention are you attending?</label>
-            <select id="formEvSelect"><option value="">— Select your event —</option></select>
+            <select id="formEvSelect" onchange="updateFormProgress()"><option value="">— Select your event —</option></select>
           </div>
         </div>
+
         <div class="fsec">
           <div class="fsec-title">Your profile</div>
-          <div class="pfp-row">
-            <label style="cursor:pointer;flex-shrink:0">
-              <div class="pfp-btn" id="pfpPreview">Upload photo</div>
-              <input type="file" accept="image/*" style="display:none" onchange="previewPfp(event)"/>
-            </label>
-            <div style="flex:1">
-              <div class="field"><label>Artist / booth name</label><input id="fName" placeholder="e.g. StardustInk"/></div>
-              <div class="field"><label>Table number</label><input id="fTable" placeholder="e.g. 21 — check your confirmation email"/></div>
+          <!-- Full-width profile pic -->
+          <label style="cursor:pointer;display:block;margin-bottom:14px">
+            <div id="pfpPreview" style="width:100%;height:160px;border-radius:var(--r);border:2px dashed var(--brd2);background:var(--surf2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--mut);font-size:13px;font-weight:600;overflow:hidden;transition:border-color .15s;position:relative">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.4"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+              Click to upload your profile photo
+              <span style="font-size:10px;opacity:.6">This appears on your pin and listing</span>
             </div>
+            <input type="file" accept="image/*" style="display:none" onchange="previewPfp(event)"/>
+          </label>
+          <div class="field"><label>Artist / booth name <span style="color:var(--red)">*</span></label><input id="fName" placeholder="e.g. StardustInk" oninput="updateFormProgress()"/></div>
+          <div class="field"><label>Table number <span style="color:var(--red)">*</span></label><input id="fTable" placeholder="e.g. 21 — check your confirmation email" oninput="updateFormProgress()"/></div>
+          <div class="field">
+            <label style="display:flex;justify-content:space-between">
+              <span>Short blurb — what are you bringing? <span style="color:var(--red)">*</span></span>
+              <span id="blurbCount" style="color:var(--mut);font-weight:500">0/200</span>
+            </label>
+            <textarea id="fBlurb" placeholder="e.g. Hand-drawn magical girl prints, acrylic charms and sticker sets — first time at MegaCon and so excited to meet everyone!" maxlength="200" oninput="updateBlurbCount();updateFormProgress()"></textarea>
           </div>
-          <div class="field"><label>Short blurb — what are you bringing?</label><textarea id="fBlurb" placeholder="e.g. Hand-drawn magical girl prints, acrylic charms and limited sticker sets!"></textarea></div>
         </div>
+
         <div class="fsec">
           <div class="fsec-title">Social media</div>
+          <div style="font-size:11px;color:var(--mut);margin-bottom:10px;font-weight:500">Add any platforms you're on — attendees can find and follow you here.</div>
           <div class="soc-fields">
-            <div class="soc-field"><span class="soc-field-lbl">Twitter/X</span><input placeholder="@handle"/></div>
-            <div class="soc-field"><span class="soc-field-lbl">Instagram</span><input placeholder="@handle"/></div>
-            <div class="soc-field"><span class="soc-field-lbl">TikTok</span><input placeholder="@handle"/></div>
-            <div class="soc-field"><span class="soc-field-lbl">BlueSky</span><input placeholder="@handle"/></div>
+            <div class="soc-field"><span class="soc-field-lbl">Twitter/X</span><input placeholder="@handle" oninput="updateFormProgress()"/></div>
+            <div class="soc-field"><span class="soc-field-lbl">Instagram</span><input placeholder="@handle" oninput="updateFormProgress()"/></div>
+            <div class="soc-field"><span class="soc-field-lbl">TikTok</span><input placeholder="@handle" oninput="updateFormProgress()"/></div>
+            <div class="soc-field"><span class="soc-field-lbl">BlueSky</span><input placeholder="@handle" oninput="updateFormProgress()"/></div>
             <div class="soc-field"><span class="soc-field-lbl">Etsy</span><input placeholder="shop URL"/></div>
             <div class="soc-field"><span class="soc-field-lbl">Website</span><input placeholder="yoursite.com"/></div>
           </div>
         </div>
+
         <div class="fsec">
           <div class="fsec-title">Catalogue images</div>
-          <div style="font-size:11px;color:var(--mut);margin-bottom:12px;font-weight:500">Upload images of your work — prints, charms, anything you're bringing. These show as a carousel on your listing. You can design these however you like with prices included in the image.</div>
+          <div style="font-size:11px;color:var(--mut);margin-bottom:12px;font-weight:500">Upload images of your work — prints, charms, anything you're bringing. Design them however you like with prices included. <strong style="color:var(--txt)">Drag to reorder.</strong></div>
           <div id="catList" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px"></div>
-          <label style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;border:1.5px dashed var(--brd2);border-radius:var(--rs);color:var(--mut);cursor:pointer;font-size:12px;font-weight:600;transition:all .15s" onmouseover="this.style.borderColor='var(--acc)';this.style.color='var(--acc)'" onmouseout="this.style.borderColor='var(--brd2)';this.style.color='var(--mut)'">
-            + Add catalogue image
+          <label style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:1.5px dashed var(--brd2);border-radius:var(--rs);color:var(--mut);cursor:pointer;font-size:12px;font-weight:600;transition:all .15s" onmouseover="this.style.borderColor='var(--acc)';this.style.color='var(--acc)'" onmouseout="this.style.borderColor='var(--brd2)';this.style.color='var(--mut)'">
+            + Add catalogue images (select multiple)
             <input type="file" accept="image/*" multiple style="display:none" onchange="addCatImages(event)"/>
           </label>
         </div>
+
         <div class="fsec">
           <div class="fsec-title">Stamp rally</div>
           <div class="tog-row" onclick="tog('rallyT','rallyX')">
-            <div class="tog-info"><div class="tog-title">I'm part of a stamp rally</div><div class="tog-sub">Toggle on to add rally details</div></div>
+            <div class="tog-info"><div class="tog-title">I'm part of a stamp rally</div><div class="tog-sub">Toggle on to add your rally details</div></div>
             <div class="tbox" id="rallyT"><div class="tknob"></div></div>
           </div>
           <div class="xtra" id="rallyX">
             <div class="field"><label>Rally name</label>
-              <select onchange="document.getElementById('newRN').style.display=this.value==='new'?'block':'none'">
-                <option value="">— Select or create —</option>
-                <option>Kawaii Collective</option><option>Galaxy Squad</option><option>Midlands Magic</option>
+              <select id="rallySelect" onchange="document.getElementById('newRN').style.display=this.value==='new'?'block':'none'">
+                <option value="">— Select existing or create new —</option>
                 <option value="new">+ Create new rally</option>
               </select>
             </div>
-            <div class="field" id="newRN" style="display:none"><label>New rally name</label><input placeholder="e.g. Pastel Parade"/></div>
+            <div class="field" id="newRN" style="display:none">
+              <label>New rally name</label>
+              <input id="newRallyName" placeholder="e.g. Pastel Parade"/>
+              <div style="font-size:10px;color:var(--mut);margin-top:4px;font-weight:500">If another artist creates the same rally name, you'll be grouped together automatically.</div>
+            </div>
             <div class="field"><label>Prize / reward info</label><textarea placeholder="e.g. Collect stamps from all 5 of us for a mystery goodie bag worth £20!" style="min-height:52px"></textarea></div>
             <div class="field"><label>Stamps needed</label><input type="number" placeholder="e.g. 5" style="width:110px"/></div>
           </div>
         </div>
-        <div class="fsec">
-          <div class="fsec-title">Limited items</div>
-          <div class="tog-row" onclick="tog('ltdT',null)">
-            <div class="tog-info"><div class="tog-title">I have limited edition items</div><div class="tog-sub">Flags your listing so attendees know to come early</div></div>
-            <div class="tbox" id="ltdT"><div class="tknob"></div></div>
-          </div>
-        </div>
+
         <div class="fsec">
           <div class="fsec-title">Verify your identity</div>
           <div class="verify-box">
-            <div class="verify-title">Prove you're a real artist</div>
+            <div class="verify-title">Prove you're a real artist 🔐</div>
             <div class="verify-sub">Choose how you'd like to verify. We'll give you a unique code — send it to us via your chosen platform so we can confirm it's really you before approving your listing.</div>
-            <select class="verify-select" id="verifyPlatform">
+            <select class="verify-select" id="verifyPlatform" onchange="updateFormProgress()">
               <option value="">— Choose verification method —</option>
               <option>Instagram DM</option>
               <option>Twitter/X DM</option>
@@ -631,7 +670,7 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
             </div>
           </div>
         </div>
-        <div style="height:20px"></div>
+        <div style="height:24px"></div>
       </div>
     </div>
     <div class="success-scr" id="successScr">
@@ -641,7 +680,6 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
       <button class="sbtn" style="margin-top:8px" onclick="resetForm()">Submit another</button>
     </div>
     <div class="submit-bar" id="submitBar">
-      <button class="sbtn">Save draft</button>
       <button class="sbtn p" onclick="submitForm()">Submit for approval →</button>
     </div>
   </div>
@@ -779,7 +817,7 @@ function switchTab(tab){
   if(sc)sc.classList.add('on');
   if(tab==='map'){buildSideEvBtns();renderArtistList();}
   if(tab==='dash'){buildDashEvList();buildDashRallyTags();renderDashContent(curDashTab);updateQueueBadge();}
-  if(tab==='form'){buildFormEvSelect();}
+  if(tab==='form'){buildFormEvSelect();showFormWarning();}
 }
 
 // -
@@ -1411,6 +1449,35 @@ function zr(){mapZoom=1;document.getElementById('mapInner').style.transform='';}
 // -
 // FORM
 // -
+function dismissFormWarning(){
+  var w=document.getElementById('formWarning');
+  if(w)w.style.display='none';
+}
+
+function updateBlurbCount(){
+  var ta=document.getElementById('fBlurb');
+  var el=document.getElementById('blurbCount');
+  if(!ta||!el)return;
+  var n=ta.value.length;
+  el.textContent=n+'/200';
+  el.style.color=n>180?'var(--amb)':n>=200?'var(--red)':'var(--mut)';
+}
+
+function updateFormProgress(){
+  var score=0;
+  var total=5;
+  if((document.getElementById('formEvSelect')||{}).value)score++;
+  if((document.getElementById('fName')||{}).value.trim())score++;
+  if((document.getElementById('fTable')||{}).value.trim())score++;
+  if((document.getElementById('fBlurb')||{}).value.trim())score++;
+  if((document.getElementById('verifyPlatform')||{}).value)score++;
+  var pct=Math.round((score/total)*100);
+  var bar=document.getElementById('formProgressBar');
+  var label=document.getElementById('formProgress');
+  if(bar)bar.style.width=pct+'%';
+  if(label)label.textContent=pct+'%';
+}
+
 function buildFormEvSelect(){
   var sel=document.getElementById('formEvSelect');
   if(!sel)return;
@@ -1420,6 +1487,28 @@ function buildFormEvSelect(){
     opt.value=ev.id;opt.textContent=ev.name+' · '+ev.dateLabel;
     sel.appendChild(opt);
   });
+  // Populate rally dropdown with known rallies from all events
+  buildRallySelect();
+}
+
+function buildRallySelect(){
+  var sel=document.getElementById('rallySelect');
+  if(!sel)return;
+  // Gather all unique rally names across all events
+  var known={};
+  EVENTS.forEach(function(ev){
+    (ev.rallies||[]).forEach(function(r){known[r]=true;});
+    (ev.artists||[]).forEach(function(a){if(a.r)known[a.r]=true;});
+  });
+  sel.innerHTML='<option value="">— Select existing or create new —</option>';
+  Object.keys(known).sort().forEach(function(r){
+    var opt=document.createElement('option');
+    opt.value=r;opt.textContent=r;
+    sel.appendChild(opt);
+  });
+  var newOpt=document.createElement('option');
+  newOpt.value='new';newOpt.textContent='+ Create new rally';
+  sel.appendChild(newOpt);
 }
 
 function tog(boxId,extraId){
@@ -1468,9 +1557,17 @@ function addCatImages(e){
   e.target.value='';
 }
 
+function showFormWarning(){
+  var w=document.getElementById('formWarning');
+  if(w){w.style.display='flex';}
+}
+
 function previewPfp(e){
   var f=e.target.files[0];if(!f)return;
-  document.getElementById('pfpPreview').innerHTML='<img src="'+URL.createObjectURL(f)+'"/>';
+  var url=URL.createObjectURL(f);
+  var preview=document.getElementById('pfpPreview');
+  preview.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:calc(var(--r) - 2px)"/>';
+  preview.style.border='2px solid var(--acc)';
 }
 
 function genVerifyCode(){
@@ -1738,17 +1835,35 @@ function renderDashMapPins(ev){
   },150);
 }
 
-function approveQ(id){
+async function approveQ(id){
   var e=document.getElementById(id);if(!e)return;
+  var artistId=e.getAttribute('data-artist-id');
+  if(artistId){
+    var res=await db.from('artists').update({status:'approved'}).eq('id',artistId);
+    if(res&&res.error){showToast('Error: '+res.error.message);return;}
+    // Reload artists and add new rally to event list if needed
+    EVENTS.forEach(function(ev){ev.artists=[];ev.rallies=[];});
+    await loadAllArtists();
+    // After reload, rebuild rally select in case a new rally was added
+    buildRallySelect();
+    renderDashContent(curDashTab);
+    if(pubEvId===dashEvId){renderArtistList();renderPubPins();}
+  }
   e.style.opacity='.4';e.style.pointerEvents='none';
-  e.querySelector('.q-actions').innerHTML='<span style="font-size:11px;color:var(--grn);font-weight:700">✓ Approved — live</span>';
-  showToast('Artist approved!');
+  showToast('Artist approved and live!');
+  updateQueueBadge();
 }
+
 function rejectQ(id){
   var e=document.getElementById(id);if(!e)return;
   e.style.opacity='.4';e.style.pointerEvents='none';
-  e.querySelector('.q-actions').innerHTML='<span style="font-size:11px;color:var(--red);font-weight:700">Rejected</span>';
   showToast('Submission rejected');
+  // async reject handled by queue override
+  var artistId=e.getAttribute('data-artist-id');
+  if(artistId){
+    db.from('artists').update({status:'rejected'}).eq('id',artistId);
+    updateQueueBadge();
+  }
 }
 
 // -
@@ -1942,10 +2057,14 @@ async function submitForm(){
   var rallyToggle=document.getElementById('rallyT');
   var rallyName='';
   if(rallyToggle&&rallyToggle.classList.contains('on')){
-    var rallySelect=document.querySelector('#rallyX select');
-    if(rallySelect)rallyName=rallySelect.value==='new'
-      ?(document.querySelector('#newRN input')||{value:''}).value.trim()
-      :rallySelect.value;
+    var rallySelect=document.getElementById('rallySelect');
+    if(rallySelect){
+      if(rallySelect.value==='new'){
+        rallyName=(document.getElementById('newRallyName')||{value:''}).value.trim();
+      } else {
+        rallyName=rallySelect.value;
+      }
+    }
   }
 
   var limited=document.getElementById('ltdT').classList.contains('on');
@@ -2020,6 +2139,8 @@ function resetForm(){
   document.getElementById('successScr').classList.remove('on');
   var btn=document.querySelector('.submit-bar .sbtn.p');
   if(btn){btn.disabled=false;btn.textContent='Submit for approval →';}
+  updateFormProgress();
+  updateBlurbCount();
 }
 
 // -
