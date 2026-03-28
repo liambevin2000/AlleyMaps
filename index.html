@@ -979,8 +979,10 @@ function renderArtistList(){
     var d=document.createElement('div');
     d.className='ac'+(selArtistId===a.id?' on':'');
     d.onclick=function(){openArtistPanel(a.id);};
-    d.innerHTML='<div class="ac-top">'+
-      '<div class="ac-av" style="background:'+a.bg+';color:'+a.fg+'">'+a.i+'</div>'+
+    var avHtml=a.pfp
+      ?'<div class="ac-av" style="background:'+a.bg+';color:'+a.fg+';overflow:hidden"><img src="'+a.pfp+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/></div>'
+      :'<div class="ac-av" style="background:'+a.bg+';color:'+a.fg+'">'+a.i+'</div>';
+    d.innerHTML='<div class="ac-top">'+avHtml+
       '<div><div class="ac-name">'+a.n+'</div><div class="ac-tbl">Table '+a.tbl+'</div></div></div>'+
       '<div class="ac-tags">'+
       a.g.map(function(g){return'<span class="atag">'+g+'</span>';}).join('')+
@@ -1032,7 +1034,14 @@ function renderPubPins(){
       var div=document.createElement('div');
       div.className='pin-circle'+(isSel?' sel':'');
       div.style.background=bg;div.style.color=fg;
-      div.textContent=a.i;
+      if(a.pfp){
+        var img=document.createElement('img');
+        img.src=a.pfp;img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;top:0;left:0';
+        div.style.position='relative';div.style.overflow='hidden';
+        div.appendChild(img);
+      } else {
+        div.textContent=a.i;
+      }
       if(a.r){
         var dot=document.createElement('div');
         dot.className='pin-rally-dot';
@@ -1052,7 +1061,14 @@ function renderPubPins(){
         div.className='pin-circle'+(isSel?' sel':'');
         div.style.background=bg;div.style.color=fg;
         div.style.width='34px';div.style.height='34px';div.style.fontSize='10px';
-        div.textContent=a.i;
+        if(a.pfp){
+          var img=document.createElement('img');
+          img.src=a.pfp;img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;top:0;left:0';
+          div.style.position='relative';div.style.overflow='hidden';
+          div.appendChild(img);
+        } else {
+          div.textContent=a.i;
+        }
         if(a.r){
           var dot=document.createElement('div');
           dot.className='pin-rally-dot';
@@ -1321,9 +1337,16 @@ function renderDashContent(tab){
       '<div class="stat"><div class="stat-n">'+ev.artists.filter(function(a){return!!a.r;}).length+'</div><div class="stat-l">In rally</div></div>'+
       '</div><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:10px">Approved artists</div>'+
       (ev.artists.length
-        ?ev.artists.map(function(a){return'<div class="q-item"><div class="q-av" style="background:'+a.bg+';color:'+a.fg+'">'+a.i+'</div>'+
-          '<div class="q-info"><div class="q-name">'+a.n+'</div><div class="q-meta">Table '+a.tbl+' · '+a.g.join(', ')+(a.r?' · '+a.r:'')+'</div></div>'+
-          '<div style="font-size:11px;color:var(--grn);font-weight:700">✓ Live</div></div>';}).join('')
+        ?ev.artists.map(function(a){
+          var avHtml=a.pfp
+            ?'<div class="q-av" style="background:'+a.bg+';color:'+a.fg+';overflow:hidden"><img src="'+a.pfp+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/></div>'
+            :'<div class="q-av" style="background:'+a.bg+';color:'+a.fg+'">'+a.i+'</div>';
+          return'<div class="q-item" id="approved_'+a.id+'" data-artist-id="'+a.id+'">'+avHtml+
+            '<div class="q-info"><div class="q-name">'+a.n+'</div><div class="q-meta">Table '+a.tbl+(a.g.length?' · '+a.g.join(', '):'')+(a.r?' · '+a.r:'')+'</div></div>'+
+            '<div class="q-actions"><span style="font-size:11px;color:var(--grn);font-weight:700">✓ Live</span>'+
+            '<button class="qbtn no" data-qid="approved_'+a.id+'" onclick="removeArtist(this.getAttribute(\'data-qid\'))">Remove</button>'+
+            '</div></div>';
+        }).join('')
         :'<div style="color:var(--mut);font-size:13px;padding:14px 0;font-weight:500">No artists yet.</div>');
 
   } else if(tab==='queue'){
@@ -1813,17 +1836,19 @@ async function approveQ(id){
   updateQueueBadge();
 }
 
-async function rejectQ(id){
-  var e=document.getElementById(id);if(!e)return;
+async function removeArtist(qid){
+  var e=document.getElementById(qid);if(!e)return;
   var artistId=e.getAttribute('data-artist-id');
+  if(!confirm('Remove this artist from the map? They will no longer appear publicly.'))return;
   if(artistId){
     var res=await db.from('artists').update({status:'rejected'}).eq('id',artistId);
-    if(res.error){showToast('Error: '+res.error.message);return;}
+    if(res&&res.error){showToast('Error: '+res.error.message);return;}
+    EVENTS.forEach(function(ev){ev.artists=[];ev.rallies=[];});
+    await loadAllArtists();
+    renderDashContent('overview');
+    if(pubEvId===dashEvId){renderArtistList();renderPubPins();}
   }
-  e.style.opacity='.4';e.style.pointerEvents='none';
-  e.querySelector('.q-actions').innerHTML='<span style="font-size:11px;color:var(--red);font-weight:700">Rejected</span>';
-  showToast('Submission rejected');
-  updateQueueBadge();
+  showToast('Artist removed');
 }
 
 // -
