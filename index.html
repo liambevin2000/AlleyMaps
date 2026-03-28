@@ -148,7 +148,11 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
 .chip{padding:3px 10px;border-radius:20px;border:1px solid var(--brd);font-size:10px;font-weight:600;cursor:pointer;background:transparent;color:var(--mut);font-family:var(--fb);transition:all .15s}
 .chip:hover{border-color:var(--brd2);color:var(--txt)}
 .chip.on{background:var(--surf3);color:var(--txt);border-color:var(--brd2)}
-.chip.ron{background:rgba(74,222,128,.1);color:var(--grn);border-color:rgba(74,222,128,.3)}
+.chip.fon{background:rgba(244,114,182,.15);color:#f472b6;border-color:rgba(244,114,182,.4);}
+.heart-btn{background:none;border:none;cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;color:var(--mut);transition:all .15s;flex-shrink:0;}
+.heart-btn:hover{transform:scale(1.2);}
+.heart-btn.on{color:#f472b6;}
+.ac.fav-glow{border-color:rgba(244,114,182,.4);}
 .artist-list{flex:1;overflow-y:auto;padding:8px}
 .ac{border:1px solid var(--brd);border-radius:var(--r);padding:10px;margin-bottom:5px;cursor:pointer;background:var(--surf2);transition:all .15s}
 .ac:hover{border-color:var(--brd2);background:var(--surf3)}
@@ -495,6 +499,7 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
           <input class="srch" id="artistSearch" placeholder="Search artists, genres…" oninput="renderArtistList()"/>
           <div class="chips">
             <button class="chip on" onclick="setChip('all',this)">All</button>
+            <button class="chip" id="favChip" onclick="setChip('fav',this)">♥ Saved</button>
             <button class="chip ron" onclick="setChip('rally',this)">Stamp rallies</button>
             <button class="chip" onclick="setChip('prints',this)">Prints</button>
             <button class="chip" onclick="setChip('charms',this)">Charms</button>
@@ -823,7 +828,7 @@ function switchTab(tab){
   document.querySelectorAll('.appview[id^="screen-"]').forEach(function(s){s.classList.remove('on');});
   var sc=document.getElementById('screen-'+tab);
   if(sc)sc.classList.add('on');
-  if(tab==='map'){buildSideEvBtns();renderArtistList();}
+  if(tab==='map'){buildSideEvBtns();renderArtistList();updateFavChip();}
   if(tab==='dash'){buildDashEvList();buildDashRallyTags();renderDashContent(curDashTab);updateQueueBadge();}
   if(tab==='form'){buildFormEvSelect();showFormWarning();}
 }
@@ -1175,6 +1180,7 @@ function getFilteredArtists(){
   return ev.artists.filter(function(a){
     var mq=!q||a.n.toLowerCase().includes(q)||a.g.some(function(g){return g.toLowerCase().includes(q);});
     var mf=chipFilter==='all'?true
+      :chipFilter==='fav'?isFav(a.id)
       :chipFilter==='rally'?!!a.r
       :chipFilter==='limited'?a.ltd
       :a.g.map(function(g){return g.toLowerCase();}).includes(chipFilter);
@@ -1201,18 +1207,26 @@ function renderArtistList(){
     return;
   }
   artists.forEach(function(a){
+    var fav=isFav(a.id);
     var d=document.createElement('div');
-    d.className='ac'+(selArtistId===a.id?' on':'');
-    d.onclick=function(){openArtistPanel(a.id);};
+    d.className='ac'+(selArtistId===a.id?' on':'')+(fav?' fav-glow':'');
     var avHtml=a.pfp
       ?'<div class="ac-av" style="background:'+a.bg+';color:'+a.fg+';overflow:hidden"><img src="'+a.pfp+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/></div>'
       :'<div class="ac-av" style="background:'+a.bg+';color:'+a.fg+'">'+a.i+'</div>';
     d.innerHTML='<div class="ac-top">'+avHtml+
-      '<div><div class="ac-name">'+a.n+'</div><div class="ac-tbl">Table '+a.tbl+'</div></div></div>'+
+      '<div style="flex:1;min-width:0"><div class="ac-name">'+a.n+'</div><div class="ac-tbl">Table '+a.tbl+'</div></div>'+
+      '<button class="heart-btn'+(fav?' on':'')+'" title="'+(fav?'Remove from saved':'Save artist')+'" data-id="'+a.id+'" data-name="'+a.n+'">♥</button>'+
+      '</div>'+
       '<div class="ac-tags">'+
       a.g.map(function(g){return'<span class="atag">'+g+'</span>';}).join('')+
       (a.r?'<span class="atag r">'+a.r+'</span>':'')+(a.ltd?'<span class="atag l">Limited</span>':'')+
       '</div>';
+    // Heart click — stop propagation so it doesn't open panel
+    d.querySelector('.heart-btn').addEventListener('click',function(e){
+      e.stopPropagation();
+      toggleFav(a.id,a.n);
+    });
+    d.onclick=function(){openArtistPanel(a.id);};
     list.appendChild(d);
   });
 }
@@ -1273,6 +1287,13 @@ function renderPubPins(){
         dot.textContent='★';
         div.appendChild(dot);
       }
+      if(isFav(a.id)&&!isSel){
+        var hdot=document.createElement('div');
+        hdot.style.cssText='position:absolute;top:-2px;left:-2px;width:12px;height:12px;border-radius:50%;background:#f472b6;border:2px solid var(--bg);font-size:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900';
+        hdot.textContent='♥';
+        div.style.position='relative';div.style.overflow='visible';
+        div.appendChild(hdot);
+      }
       div.onclick=function(){openArtistPanel(a.id);};
       wrap.appendChild(div);
     } else {
@@ -1329,6 +1350,8 @@ function openArtistPanel(artistId){
   // Close btn + header
   html+='<div class="ap-header">';
   html+='<button class="ap-close" onclick="closeArtistPanel()">×</button>';
+  var faved=isFav(a.id);
+  html+='<button id="ap-heart" class="heart-btn'+(faved?' on':'')+'" style="position:absolute;top:16px;right:48px;font-size:20px" title="'+(faved?'Remove from saved':'Save artist')+'" onclick="toggleFav(\''+a.id+'\',\''+a.n+'\')">♥</button>';
   var avContent=a.pfp
     ?'<img src="'+a.pfp+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>'
     :a.i;
@@ -2694,6 +2717,39 @@ function autoPositionSharedTable(ev,newArtistId){
   newA.x=newX;newA.y=newY;
   savePinPosition(newArtistId,newX,newY);
   showToast('Pin auto-placed next to '+ref.n);
+}
+
+// ─────────────────────────────────────────
+// FAVOURITES — localStorage
+// ─────────────────────────────────────────
+function getFavs(){
+  try{return JSON.parse(localStorage.getItem('alleymap_favs')||'{}');}
+  catch(e){return{};}
+}
+function isFav(artistId){return!!getFavs()[artistId];}
+function toggleFav(artistId,artistName){
+  var favs=getFavs();
+  if(favs[artistId]){
+    delete favs[artistId];
+    showToast('Removed '+artistName+' from saved');
+  } else {
+    favs[artistId]={n:artistName,ts:Date.now()};
+    showToast('♥ Saved '+artistName+'!');
+  }
+  try{localStorage.setItem('alleymap_favs',JSON.stringify(favs));}catch(e){}
+  updateFavChip();
+  renderArtistList();
+  renderPubPins();
+  // Update heart in panel if open
+  var hb=document.getElementById('ap-heart');
+  if(hb){hb.classList.toggle('on',isFav(artistId));hb.title=isFav(artistId)?'Remove from saved':'Save artist';}
+}
+function updateFavChip(){
+  var count=Object.keys(getFavs()).length;
+  var chip=document.getElementById('favChip');
+  if(!chip)return;
+  chip.textContent=count>0?'♥ Saved ('+count+')':'♥ Saved';
+  chip.classList.toggle('fon',count>0);
 }
 
 function showToast(msg){
