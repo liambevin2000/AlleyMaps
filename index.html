@@ -1437,12 +1437,35 @@ function addCatImages(e){
   files.forEach(function(f){
     var url=URL.createObjectURL(f);
     var item=document.createElement('div');
-    item.style.cssText='position:relative;aspect-ratio:1;border-radius:var(--rs);overflow:hidden;border:1px solid var(--brd);background:var(--surf2)';
-    item.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover"/>'+
-      '<button onclick="this.parentElement.remove()" style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>';
+    item.style.cssText='position:relative;aspect-ratio:1;border-radius:var(--rs);overflow:hidden;border:1px solid var(--brd);background:var(--surf2);cursor:grab';
+    item.draggable=true;
+    item.innerHTML=
+      '<img src="'+url+'" style="width:100%;height:100%;object-fit:contain;pointer-events:none"/>'+
+      '<div style="position:absolute;top:2px;left:2px;background:rgba(0,0,0,.5);border-radius:4px;padding:2px 4px;font-size:9px;color:rgba(255,255,255,.6);font-weight:600;pointer-events:none">drag to reorder</div>'+
+      '<button onclick="this.parentElement.remove()" style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;z-index:2">×</button>';
     item._file=f;
+    // Drag to reorder
+    item.addEventListener('dragstart',function(ev){
+      ev.dataTransfer.effectAllowed='move';
+      item._dragging=true;
+      setTimeout(function(){item.style.opacity='.4';},0);
+    });
+    item.addEventListener('dragend',function(){
+      item.style.opacity='1';item._dragging=false;
+    });
+    item.addEventListener('dragover',function(ev){
+      ev.preventDefault();ev.dataTransfer.dropEffect='move';
+      var dragging=list.querySelector('[style*="opacity: 0.4"],[style*="opacity:0.4"]');
+      if(!dragging||dragging===item)return;
+      var rect=item.getBoundingClientRect();
+      var after=ev.clientX>rect.left+rect.width/2;
+      if(after)list.insertBefore(dragging,item.nextSibling);
+      else list.insertBefore(dragging,item);
+    });
     list.appendChild(item);
   });
+  // Reset input so same files can be added again if needed
+  e.target.value='';
 }
 
 function previewPfp(e){
@@ -2135,25 +2158,40 @@ renderDashContent=async function(tab){
     el.innerHTML='<div style="font-size:12px;color:var(--mut);margin-bottom:16px;font-weight:500">'+pending.length+' submission'+(pending.length>1?'s':'')+' awaiting verification &amp; approval</div>'+
       '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">'+
       pending.map(function(a){
-        // Profile pic or initials avatar
-        var avStyle='width:56px;height:56px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;font-family:var(--fd);background:'+(a.bg_color||'#ede7f6')+';color:'+(a.fg_color||'#7c4dff')+';overflow:hidden;border:2px solid var(--brd)';
+        // Profile pic or initials avatar — clickable if has image
+        var avStyle='width:56px;height:56px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;font-family:var(--fd);background:'+(a.bg_color||'#ede7f6')+';color:'+(a.fg_color||'#7c4dff')+';overflow:hidden;border:2px solid var(--brd)'+(a.profile_pic_url?';cursor:zoom-in':'');
         var avContent=a.profile_pic_url
-          ?'<img src="'+a.profile_pic_url+'" style="width:100%;height:100%;object-fit:cover"/>'
+          ?'<img src="'+a.profile_pic_url+'" style="width:100%;height:100%;object-fit:cover" onclick="openLightbox(\''+a.profile_pic_url+'\')" />'
           :(a.initials||a.name.slice(0,2).toUpperCase());
 
-        // Catalogue preview — first 3 images as small thumbnails
-        var catImgs=(a.catalogue||[]).filter(function(c){return c.imgUrl;}).slice(0,3);
-        var catHtml=catImgs.length
-          ?'<div style="display:flex;gap:4px;margin-bottom:12px">'+
-            catImgs.map(function(c){return'<div style="flex:1;height:64px;border-radius:6px;overflow:hidden;border:1px solid var(--brd);background:var(--surf3)"><img src="'+c.imgUrl+'" style="width:100%;height:100%;object-fit:contain"/></div>';}).join('')+
-            (catImgs.length<(a.catalogue||[]).filter(function(c){return c.imgUrl;}).length?'<div style="flex:0 0 32px;height:64px;border-radius:6px;background:var(--surf3);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--mut);font-weight:700">+'+((a.catalogue||[]).filter(function(c){return c.imgUrl;}).length-3)+'</div>':'')
-          +'</div>'
+        // Catalogue preview — all images, clickable
+        var allCatImgs=(a.catalogue||[]).filter(function(c){return c.imgUrl;});
+        var catHtml=allCatImgs.length
+          ?'<div style="display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap">'+
+            allCatImgs.map(function(c){
+              return'<div onclick="openLightbox(\''+c.imgUrl+'\')" style="flex:0 0 calc(33% - 3px);height:64px;border-radius:6px;overflow:hidden;border:1px solid var(--brd);background:var(--surf3);cursor:zoom-in;transition:opacity .15s" onmouseover="this.style.opacity=\'.75\'" onmouseout="this.style.opacity=\'1\'">'+
+                '<img src="'+c.imgUrl+'" style="width:100%;height:100%;object-fit:contain"/>'+
+              '</div>';
+            }).join('')+
+          '</div>'
           :'<div style="height:48px;border-radius:6px;background:var(--surf3);border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--mut);margin-bottom:12px;font-weight:500">No catalogue images uploaded</div>';
 
-        // Socials
+        // Socials — clickable, copy handle or open URL
         var socsHtml=(a.socials||[]).length
           ?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">'+
-            (a.socials||[]).map(function(s){return'<span style="padding:2px 8px;border-radius:10px;background:var(--surf3);border:1px solid var(--brd);font-size:10px;color:var(--mut);font-weight:600">'+s.p+': '+s.h+'</span>';}).join('')+
+            (a.socials||[]).map(function(s){
+              var handle=s.h||'';
+              var url='';
+              var lp=(s.p||'').toLowerCase();
+              if(lp.includes('instagram'))url='https://instagram.com/'+handle.replace('@','');
+              else if(lp.includes('twitter')||lp.includes('x'))url='https://twitter.com/'+handle.replace('@','');
+              else if(lp.includes('tiktok'))url='https://tiktok.com/@'+handle.replace('@','');
+              else if(lp.includes('bluesky'))url='https://bsky.app/profile/'+handle.replace('@','');
+              else if(lp.includes('etsy'))url=handle.startsWith('http')?handle:'https://etsy.com/shop/'+handle;
+              else if(handle.startsWith('http'))url=handle;
+              var clickAttr=url?'onclick="window.open(\''+url+'\',\'_blank\')" style="cursor:pointer"':'onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+handle+'\');showToast(\'Copied: '+handle+'\')" style="cursor:pointer"';
+              return'<span '+clickAttr+' title="'+(url?'Open '+s.p:handle)+'" style="padding:4px 10px;border-radius:10px;background:var(--surf2);border:1px solid var(--brd2);font-size:10px;color:var(--acc);font-weight:700;transition:background .15s" onmouseover="this.style.background=\'var(--surf3)\'" onmouseout="this.style.background=\'var(--surf2)\'">'+s.p+' <span style="color:var(--mut)">'+handle+'</span></span>';
+            }).join('')+
           '</div>'
           :'';
 
