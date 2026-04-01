@@ -383,8 +383,138 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
 .link-row{display:flex;gap:7px;align-items:center}
 .link-val{flex:1;padding:8px 12px;border:1px solid var(--brd);border-radius:var(--rs);font-size:11px;color:var(--mut);background:var(--surf2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
 
-/* toast */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--surf);border:1px solid var(--brd2);color:var(--txt);padding:9px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:9999;transition:transform .2s ease;white-space:nowrap;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+/* ═══════════════════════════════════
+   MOBILE — ≤768px
+═══════════════════════════════════ */
+@media(max-width:768px){
+
+  /* ── BOTTOM TAB BAR ── */
+  nav{display:none!important}
+  .mob-tabs{display:flex!important}
+
+  /* ── LANDING ── */
+  .land-nav{padding:0 16px;height:52px}
+  .land-logo{font-size:20px}
+  .land-nav-r .lbtn:first-child{display:none}
+  .hero{grid-template-columns:1fr;gap:24px;padding:32px 16px 28px}
+  .hero-h{font-size:42px}
+  .hero-card{display:none}
+  .hero-sub{font-size:14px}
+  .land-section{padding:36px 16px}
+  .sec-title{font-size:32px}
+  .features{grid-template-columns:1fr}
+  .land-footer{flex-direction:column;gap:12px;text-align:center;padding:24px 16px}
+
+  /* Event cards — big full width */
+  .ev-row{padding:16px;border-radius:16px}
+  .ev-title{font-size:16px}
+  .ev-badges{flex-direction:row;flex-wrap:wrap;gap:5px;margin-top:8px;margin-left:0}
+  .ev-row{flex-wrap:wrap}
+  .ev-arrow{display:none}
+
+  /* ── APP NAV REPLACED BY BOTTOM TABS ── */
+  #appview{padding-bottom:60px}
+  .screen-map-wrap{flex-direction:column!important}
+
+  /* ── PUBLIC MAP — SPLIT LAYOUT ── */
+  .pub-wrap{flex-direction:column!important}
+  .pub-side{
+    width:100%!important;
+    height:auto!important;
+    border-right:none!important;
+    border-top:1px solid var(--brd);
+    order:2;
+    max-height:48vh;
+    flex-shrink:0;
+  }
+  .side-top{padding:10px 12px 8px}
+  .side-ev-btns{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;gap:6px;padding-bottom:4px}
+  .sev-btn{flex-shrink:0;min-width:160px}
+  .chips{overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}
+  .chip{white-space:nowrap;flex-shrink:0}
+  .mapzone{
+    order:1;
+    flex:none!important;
+    height:52vh!important;
+    min-height:52vh;
+  }
+  .map-tools{top:8px;right:8px}
+  .map-legend{display:none}
+  .rally-explore-btn{margin:6px 12px 8px}
+
+  /* ── ARTIST PANEL — BOTTOM DRAWER ── */
+  .artist-panel{
+    align-items:flex-end!important;
+    justify-content:flex-start!important;
+    background:rgba(0,0,0,.45)!important;
+  }
+  .ap-inner{
+    width:100%!important;
+    height:auto!important;
+    max-height:82vh!important;
+    border-left:none!important;
+    border-top:1px solid var(--brd)!important;
+    border-radius:20px 20px 0 0!important;
+    transform:translateY(100%);
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  .ap-inner.open{transform:translateY(0)!important}
+  /* Drag handle */
+  .ap-inner::before{
+    content:'';display:block;width:40px;height:4px;border-radius:2px;
+    background:var(--brd2);margin:10px auto 0;flex-shrink:0;
+  }
+  .ap-name{font-size:22px}
+
+  /* ── FORM ── */
+  .form-wrap{padding:20px 16px}
+
+  /* ── DASHBOARD ── */
+  .dash{flex-direction:column!important}
+  .dash-side{
+    width:100%!important;
+    border-right:none!important;
+    border-bottom:1px solid var(--brd);
+    flex-direction:row!important;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    padding:10px 12px;
+    gap:8px;
+    max-height:none!important;
+    background:var(--surf);
+  }
+  .dash-side-lbl{display:none}
+  .dash-ev-card{flex-shrink:0;min-width:150px}
+  .dash-add-btn{flex-shrink:0;min-width:100px;padding:8px 12px}
+  .dash-content{padding:14px}
+  .stats{grid-template-columns:repeat(2,1fr)!important}
+  .dash-toolbar{flex-wrap:wrap;gap:6px;padding:10px 14px}
+  .dtabs{flex-wrap:wrap;margin-left:0;width:100%}
+  .dtab{font-size:11px;padding:5px 10px}
+  #dashTitle{font-size:16px}
+
+  /* ── QUEUE CARDS ── */
+  .dash-content > div[style*="grid"]{grid-template-columns:1fr!important}
+}
+
+/* ── BOTTOM TAB BAR ── */
+.mob-tabs{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  height:60px;z-index:200;
+  background:rgba(13,13,20,.98);
+  border-top:1px solid var(--brd);
+  flex-direction:row;align-items:stretch;
+}
+.mob-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;border:none;background:none;cursor:pointer;font-family:var(--fb);
+  color:var(--mut);transition:color .15s;padding:0;
+}
+.mob-tab.on{color:var(--acc)}
+.mob-tab-icon{font-size:20px;line-height:1}
+.mob-tab-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--surf);border:1px solid var(--brd2);color:var(--txt);padding:9px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:9999;transition:transform .2s ease;white-space:nowrap;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.4)}
 .toast.on{transform:translateX(-50%) translateY(0)}
 </style>
 </head>
@@ -727,6 +857,21 @@ nav{display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:1px
       </div>
     </div>
   </div>
+</div>
+
+<div class="mob-tabs" id="mobTabs">
+  <button class="mob-tab on" id="mobtab-map" onclick="switchTab('map');setMobTab('map')">
+    <span class="mob-tab-icon">🗺️</span>
+    <span class="mob-tab-label">Map</span>
+  </button>
+  <button class="mob-tab" id="mobtab-form" onclick="switchTab('form');setMobTab('form')">
+    <span class="mob-tab-icon">✏️</span>
+    <span class="mob-tab-label">Register</span>
+  </button>
+  <button class="mob-tab" id="mobtab-dash" onclick="switchTab('dash');setMobTab('dash')">
+    <span class="mob-tab-icon">⚙️</span>
+    <span class="mob-tab-label">Dashboard</span>
+  </button>
 </div>
 
 <div class="toast" id="toastEl"></div>
@@ -2760,6 +2905,70 @@ function updateFavChip(){
   chip.classList.toggle('fon',count>0);
 }
 
+// ─────────────────────────────────────────
+// MOBILE HELPERS
+// ─────────────────────────────────────────
+function isMobile(){return window.innerWidth<=768;}
+
+function setMobTab(tab){
+  document.querySelectorAll('.mob-tab').forEach(function(b){b.classList.remove('on');});
+  var t=document.getElementById('mobtab-'+tab);
+  if(t)t.classList.add('on');
+}
+
+// Override openArtistPanel to animate drawer on mobile
+var _origOpenPanel=openArtistPanel;
+openArtistPanel=function(artistId){
+  _origOpenPanel(artistId);
+  if(isMobile()){
+    requestAnimationFrame(function(){
+      var inner=document.getElementById('apInner');
+      if(inner)inner.classList.add('open');
+    });
+  }
+};
+
+// Override closeArtistPanel to slide drawer back down on mobile
+var _origClosePanel=closeArtistPanel;
+closeArtistPanel=function(){
+  if(isMobile()){
+    var inner=document.getElementById('apInner');
+    if(inner){
+      inner.classList.remove('open');
+      setTimeout(_origClosePanel,300);
+      return;
+    }
+  }
+  _origClosePanel();
+};
+
+// Tap backdrop to close on mobile
+document.addEventListener('DOMContentLoaded',function(){
+  var panel=document.getElementById('artistPanel');
+  if(panel){
+    panel.addEventListener('click',function(e){
+      if(e.target===panel)closeArtistPanel();
+    });
+  }
+});
+
+// Keep mob tabs in sync with desktop tab switching
+var _origSwitchTab=switchTab;
+switchTab=function(tab){
+  _origSwitchTab(tab);
+  setMobTab(tab);
+};
+
+// On mobile, hide the logo link back to landing and make logo tap go to landing
+function initMobile(){
+  if(!isMobile())return;
+  updateFavChip();
+}
+
+window.addEventListener('resize',function(){
+  updateFavChip();
+});
+
 function showToast(msg){
   var t=document.getElementById('toastEl');
   t.textContent=msg;t.classList.add('on');
@@ -2773,6 +2982,7 @@ loadEvents().catch(function(err){
   console.error('Failed to load from Supabase:',err);
   showLanding();
 });
+initMobile();
 </script>
 </body>
 </html>
